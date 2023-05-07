@@ -1,8 +1,16 @@
 {
   "dependencies": {
+    "3js": "^1.0.0",
     "three": "^0.152.2"
   },
   "devDependencies": {
     "vite": "^4.3.5"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
+    "preview": "vite preview"
   }
 }
