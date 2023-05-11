@@ -1,13 +1,15 @@
-
 <html>
-    <script src="client.js"></script>
+    <head>
+        <script src="./client.js"></script>
+    </head>
     <body>
 
-        hello world
+        <title>Concurrent Users Test</title>
         
-        <div id="text">
-            yeah
-            <button type="button" onclick="ajaxUpdate()">change</button>
-        </div>
+        <h1> Connected Users: </h1>
+        <div id="users"></div>
+
+        <input id="data" placeholder="send"/>
+        <div id="conversation"></div>
     </body>
 </html>
