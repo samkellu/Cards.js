@@ -31,8 +31,17 @@ window.onload = () => {
 
     var screen = document.getElementById("screen");
     var two = new Two( {fullscreen: true}).appendTo(screen);
-    var card = new Card(500, 500, 4, 3);
-    card.draw(two);
+    // var card = new Card(500, 500, 4, 3, two);
+    // card.draw(two);
+    var img = new Image();
+    img.src = "./card.png";
+
+    var rect = two.makeRectangle(two.width / 2, two.height / 2, img.width, img.height);
+    var texture = new Two.Texture(img);
+    var sprite = new Two.Sprite(texture);
+    sprite.scale = rect.scale;
+    sprite.translation.set(rect.translation.x, rect.translation.y);
+    two.add(sprite);
     two.update();
 
     document.getElementById("data").addEventListener("keypress", (e) => {
