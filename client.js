@@ -30,8 +30,9 @@ window.onload = () => {
 
     var screen = document.getElementById("screen");
     var two = new Two( {fullscreen: true}).appendTo(screen);
-
-    var rectangle = two.makeRoundedRectangle(two.width/2, two.height/2, 250, 350, 20);
+    var rectangle = two.makeRectangle(two.width/2, two.height/2, 250, 350);
+    var texture = new Two.Texture('./card.png');
+    rectangle.noStroke().fill = texture;
     two.update();
 
     document.getElementById("data").addEventListener("keypress", (e) => {
