@@ -1,7 +1,7 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 import { Decks } from "./decks.js";
-import { CardData } from "./cardData.js";
-import { Hand } from "./card.js";
+import { CardBack, HandBack } from "./cardBack.js";
+// import { HandBack } from "./cardFront.js";
 
 
 const connected = new Map();
@@ -29,11 +29,8 @@ function broadcast_users() {
 }
 
 function initGamestate() {
-    console.log(hands.size);
     for (let [player, hand] of hands) {
         for (let i = 0; i < 6; i++) {
-
-            console.log(i);
             var card = deck.draw();
             hand.addToHand(card);
 
@@ -62,7 +59,7 @@ router.get("/start_web_socket", async (ctx) => {
     console.log(`${username} connected to server.`);
     
     sock.onopen = () => {
-        hands.set(username, new Hand());
+        hands.set(username, new HandBack());
         broadcast_users();
         initGamestate();
     };
@@ -81,8 +78,6 @@ router.get("/start_web_socket", async (ctx) => {
                 event: "addCard",
                 cardSuit: data.cardSuit,
                 cardNum: data.cardNum,
-                cardX: data.cardX,
-                cardY: data.cardY
             }),);
         }
         
