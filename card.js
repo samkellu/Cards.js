@@ -9,29 +9,34 @@ export class Card {
     value;
     suit;
     value_string;
-    texture;
+    image;
 
     constructor(x, y, value, suit, canvas){
         this.x = x;
         this.y = y;
-        this.width = 250;
-        this.height = 550;
         this.radius = 20;
         this.value = value;
         this.value_string = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King"][value];
         this.suit = ["Hearts", "Diamonds", "Clubs", "Spades"][suit];
         let filename = "./cardSprites/tile0"+(suit*13+value)+".png";
-
-        this.texture = new Two.Texture(filename, function() {
-            var shape = canvas.makeRectangle(canvas.width / 2, canvas.height / 2, texture.image.width, texture.image.height);
-            shape.noStroke().fill = texture;
-        });
+        
+        this.image = new Image(100,100);
+        this.image.src = filename;
+        this.width = this.image.width;
+        this.height = this.image.height;
     }
 
 
     draw(canvas){
 
-        // var card = canvas.makeRoundedRectangle(this.x, this.y, this.width, this.height, this.radius);
-        // card.noStroke().fill = this.texture;//'#ff0000';//new Two.Texture("./card.png");
+        var rect = canvas.makeRectangle(this.x, this.y, this.width, this.height);
+        rect.noStroke();
+
+        var texture = new Two.Texture(this.image);
+        var sprite = new Two.Sprite(texture);
+        sprite.scale = rect.scale;
+        sprite.translation.set(rect.translation.x, rect.translation.y);
+    
+        canvas.add(sprite);
     }
 }
