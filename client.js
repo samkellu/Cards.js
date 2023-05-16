@@ -33,7 +33,8 @@ window.onload = () => {
     var two = new Two( {fullscreen: true}).appendTo(screen);
     // var card = new Card(500, 500, 4, 3, two);
     // card.draw(two);
-    var img = new Image();
+
+    var img = new Image(100, 100);
     img.src = "./card.png";
 
     var rect = two.makeRectangle(two.width / 2, two.height / 2, img.width, img.height);
