@@ -3,13 +3,15 @@ import {Card} from "./card.js"
 
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
+const screen = document.getElementById("screen");
+const two = new Two( {fullscreen: true}).appendTo(screen);
 
 sock.onmessage = (m) => {
     const data = JSON.parse(m.data);
 
     switch (data.event) {
-        case "sendMessage":
-            addToConversation(data.username, data.message);
+        case "addCard":
+            addCard(data.cardSuit, data.cardNum, data.cardX, data.cardY);
             break;
         
         case "setUserList":
@@ -23,27 +25,13 @@ sock.onmessage = (m) => {
     }
 };
 
-function addToConversation(username, msg) {
-    document.getElementById('conversation').innerHTML += `</br><b> ${username} </b>: ${msg}`;
+function addCard(cardSuit, cardNum, cardX, cardY) {
+    var card = new Card(cardX, cardY, cardSuit, cardNum, two);
+    card.draw(two);
+    two.update();
 }
 
 window.onload = () => {
-
-    var screen = document.getElementById("screen");
-    var two = new Two( {fullscreen: true}).appendTo(screen);
-    // var card = new Card(500, 500, 4, 3, two);
-    // card.draw(two);
-
-    var img = new Image(100, 100);
-    img.src = "./card.png";
-
-    var rect = two.makeRectangle(two.width / 2, two.height / 2, img.width, img.height);
-    var texture = new Two.Texture(img);
-    var sprite = new Two.Sprite(texture);
-    sprite.scale = rect.scale;
-    sprite.translation.set(rect.translation.x, rect.translation.y);
-    two.add(sprite);
-    two.update();
 
     document.getElementById("data").addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
