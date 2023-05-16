@@ -11,15 +11,15 @@ export class Card {
     value_string;
     image;
 
-    constructor(x, y, suit, value, canvas){
+    constructor(x, y, suitNum, cardNum, canvas){
         this.x = x;
         this.y = y;
         this.radius = 20;
-        this.value = value;
-        this.value_string = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King"][value];
-        this.suit = ["Hearts", "Diamonds", "Clubs", "Spades"][suit];
-        let filename = "./cardSprites/tile0"+(suit*13+value)+".png";
-        
+        this.value = cardNum;
+        console.log(suitNum);
+        this.suit = ["heart", "diamond", "club", "spade"][suitNum];
+        let filename = "./cardSprites/"+["heart", "diamond", "club", "spade"][suitNum]+cardNum+".png";
+        console.log(filename);
         this.image = new Image(100,100);
         this.image.src = filename;
         this.width = this.image.width;

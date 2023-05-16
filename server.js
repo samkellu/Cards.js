@@ -40,8 +40,8 @@ router.get("/start_web_socket", async (ctx) => {
         broadcast_users();
         broadcast(JSON.stringify({
             event: "addCard",
-            cardSuit: 4,
-            cardNum: 1,
+            cardSuit: 1,
+            cardNum: 10,
             cardX: 200,
             cardY: 50
         }),);
