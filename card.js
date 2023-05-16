@@ -1,8 +1,6 @@
 import {Two} from "./two.js"
 
 export class Card {
-    x;
-    y;
     width;
     height;
     radius;
@@ -11,9 +9,7 @@ export class Card {
     value_string;
     image;
 
-    constructor(x, y, suitNum, cardNum, canvas){
-        this.x = x;
-        this.y = y;
+    constructor(suitNum, cardNum){
         this.radius = 20;
         this.value = cardNum;
         console.log(suitNum);
@@ -27,16 +23,32 @@ export class Card {
     }
 
 
-    draw(canvas){
-
-        var rect = canvas.makeRectangle(this.x, this.y, this.width, this.height);
+    draw(x, y, canvas){
+        var rect = canvas.makeRectangle(x, y, this.width, this.height);
         rect.noStroke();
-
         var texture = new Two.Texture(this.image);
         var sprite = new Two.Sprite(texture);
         sprite.scale = rect.scale;
         sprite.translation.set(rect.translation.x, rect.translation.y);
-    
         canvas.add(sprite);
+    }
+}
+
+
+export class Hand {
+    hand_array;
+    face_down;
+    face_up;
+
+    constructor(hand_array, face_down_array, face_up_array){
+        this.hand_array = hand_array;
+        this.face_down = face_down_array;
+        this.face_up = face_up_array;
+    }
+
+    draw(canvas){
+        for (let i = 0; i < this.hand_array.length; i++){
+            this.hand_array[i].draw(500+i*500, 500);
+        }
     }
 }
