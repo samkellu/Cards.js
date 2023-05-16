@@ -12,10 +12,8 @@ export class Card {
     constructor(suitNum, cardNum){
         this.radius = 20;
         this.value = cardNum;
-        console.log(suitNum);
-        this.suit = ["heart", "diamond", "club", "spade"][suitNum];
+        this.suit = suitNum;
         let filename = "./cardSprites/"+["heart", "diamond", "club", "spade"][suitNum]+cardNum+".png";
-        console.log(filename);
         this.image = new Image(100,100);
         this.image.src = filename;
         this.width = this.image.width;
@@ -36,19 +34,22 @@ export class Card {
 
 
 export class Hand {
-    hand_array;
-    face_down;
-    face_up;
 
-    constructor(hand_array, face_down_array, face_up_array){
-        this.hand_array = hand_array;
-        this.face_down = face_down_array;
-        this.face_up = face_up_array;
+    constructor(){
+        console.log("inint");
+        this.handArray = [];
+        this.faceDown = [];
+        this.faceUp = [];
+    }
+
+    addToHand(card) {
+        console.log("added");
+        this.handArray.push(card);
     }
 
     draw(canvas){
         for (let i = 0; i < this.hand_array.length; i++){
-            this.hand_array[i].draw(500+i*500, 500);
+            this.hand_array[i].draw(100+i*64, 200, canvas);
         }
     }
 }

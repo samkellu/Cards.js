@@ -1,17 +1,19 @@
 import {Two} from "./two.js";
-import {Card} from "./card.js"
+import {Card, Hand} from "./card.js"
 
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
 const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
+const hand = new Hand();
 
 sock.onmessage = (m) => {
     const data = JSON.parse(m.data);
 
     switch (data.event) {
         case "addCard":
-            addCard(data.cardSuit, data.cardNum, data.cardX, data.cardY);
+            console.log(data.cardNum);
+            addCard(data.cardSuit, data.cardNum);
             break;
         
         case "setUserList":
@@ -25,9 +27,9 @@ sock.onmessage = (m) => {
     }
 };
 
-function addCard(cardSuit, cardNum, cardX, cardY) {
-    var card = new Card(cardX, cardY, cardSuit, cardNum, two);
-    card.draw(two);
+function addCard(cardSuit, cardNum) {
+    hand.addToHand(new Card(cardSuit, cardNum, two));
+    hand.draw(two);
     two.update();
 }
 

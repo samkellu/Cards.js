@@ -1,10 +1,16 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
+import { Decks } from "./decks.js";
+import { CardData } from "./cardData.js";
+import { Hand } from "./card.js";
+
 
 const connected = new Map();
+const hands = new Map();
 
 const app = new Application();
 const port = 8080;
 const router = new Router();
+const deck = new Decks();
 
 function broadcast(msg) {
 
@@ -22,35 +28,43 @@ function broadcast_users() {
     }),);
 }
 
+function initGamestate() {
+    console.log(hands.size);
+    for (let [player, hand] of hands) {
+        for (let i = 0; i < 6; i++) {
+
+            console.log(i);
+            var card = deck.draw();
+            hand.addToHand(card);
+
+            broadcast(JSON.stringify({
+                event: "addCard",
+                cardSuit: card.suit,
+                cardNum: card.num
+            }),);
+        }
+    }
+}
+
 router.get("/start_web_socket", async (ctx) => {
 
+    
     const sock = await ctx.upgrade();
     const username = ctx.request.url.searchParams.get("username");
-
+    
     if (connected.has(username)) {
         sock.close(1008, "username is taken");
         return;
     }
-
+    
     sock.username = username;
     connected.set(username, sock);
     console.log(`${username} connected to server.`);
-
+    
     sock.onopen = () => {
+        hands.set(username, new Hand());
         broadcast_users();
-
-        var cardNum = prompt("Enter card number: ");
-        var suit = prompt("Enter suit: ");
-
-        broadcast(JSON.stringify({
-            event: "addCard",
-            cardSuit: parseInt(suit, 10),
-            cardNum: parseInt(cardNum, 10),
-            cardX: 200,
-            cardY: 50
-        }),);
-
-        
+        initGamestate();
     };
 
     sock.onclose = () => {
