@@ -31,7 +31,6 @@ window.onload = () => {
 
     var screen = document.getElementById("screen");
     var two = new Two( {fullscreen: true}).appendTo(screen);
-
     var card = new Card(500, 500, 4, 3);
     card.draw(two);
     two.update();
