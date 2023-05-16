@@ -1,4 +1,5 @@
 import {Two} from "./two.js";
+import {Card} from "./card.js"
 
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
@@ -31,7 +32,8 @@ window.onload = () => {
     var screen = document.getElementById("screen");
     var two = new Two( {fullscreen: true}).appendTo(screen);
 
-    var rectangle = two.makeRoundedRectangle(two.width/2, two.height/2, 250, 350, 20);
+    var card = new Card(500, 500, 4, 3);
+    card.draw(two);
     two.update();
 
     document.getElementById("data").addEventListener("keypress", (e) => {
