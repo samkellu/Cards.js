@@ -11,7 +11,7 @@ export class Card {
     value_string;
     image;
 
-    constructor(x, y, value, suit, canvas){
+    constructor(x, y, suit, value, canvas){
         this.x = x;
         this.y = y;
         this.radius = 20;

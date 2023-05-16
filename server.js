@@ -38,6 +38,13 @@ router.get("/start_web_socket", async (ctx) => {
 
     sock.onopen = () => {
         broadcast_users();
+        broadcast(JSON.stringify({
+            event: "addCard",
+            cardSuit: 4,
+            cardNum: 1,
+            cardX: 200,
+            cardY: 50
+        }),);
     };
 
     sock.onclose = () => {
@@ -48,6 +55,17 @@ router.get("/start_web_socket", async (ctx) => {
 
     sock.onmessage = (m) => {
         const data = JSON.parse(m.data);
+        if (data.event == "addCard") {
+
+            broadcast(JSON.stringify({
+                event: "addCard",
+                cardSuit: data.cardSuit,
+                cardNum: data.cardNum,
+                cardX: data.cardX,
+                cardY: data.cardY
+            }),);
+        }
+        
         if (data.event == "sendMessage") {
             broadcast(JSON.stringify({
                 event: "sendMessage",
@@ -56,6 +74,7 @@ router.get("/start_web_socket", async (ctx) => {
             }),);
         } 
     };
+
 });
 
 app.use(router.routes());
