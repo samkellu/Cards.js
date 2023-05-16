@@ -38,13 +38,19 @@ router.get("/start_web_socket", async (ctx) => {
 
     sock.onopen = () => {
         broadcast_users();
+
+        var cardNum = prompt("Enter card number: ");
+        var suit = prompt("Enter suit: ");
+
         broadcast(JSON.stringify({
             event: "addCard",
-            cardSuit: 1,
-            cardNum: 10,
+            cardSuit: parseInt(suit, 10),
+            cardNum: parseInt(cardNum, 10),
             cardX: 200,
             cardY: 50
         }),);
+
+        
     };
 
     sock.onclose = () => {
