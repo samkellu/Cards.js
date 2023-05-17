@@ -1,6 +1,28 @@
-import { CardBack } from "./cardBack.js";
+export class CardBack {
+    value;
+    suit;
 
-export class Decks {
+    constructor(suit, num){
+        this.suit = suit;
+        this.num = num;
+    }
+}
+
+
+export class HandBack {
+
+    constructor(){
+        this.handArray = [];
+        this.faceDown = [];
+        this.faceUp = [];
+    }
+
+    addToHand(card) {
+        this.handArray.push(card);
+    }
+}
+
+export class DecksBack {
     
     constructor() {
 
@@ -29,7 +51,7 @@ export class Decks {
     }
 
     play(card) {
-        this.playDeck.push()
+        this.playDeck.push(card);
     }
 
     clearPlayDeck() {

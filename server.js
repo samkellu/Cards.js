@@ -1,8 +1,5 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
-import { Decks } from "./decks.js";
-import { CardBack, HandBack } from "./cardBack.js";
-// import { HandBack } from "./cardFront.js";
-
+import { CardBack, HandBack, DecksBack } from "./backendClasses.js";
 
 const connected = new Map();
 const hands = new Map();
@@ -10,7 +7,7 @@ const hands = new Map();
 const app = new Application();
 const port = 8080;
 const router = new Router();
-const deck = new Decks();
+const deck = new DecksBack();
 
 function broadcast(msg) {
 
@@ -72,22 +69,19 @@ router.get("/start_web_socket", async (ctx) => {
 
     sock.onmessage = (m) => {
         const data = JSON.parse(m.data);
-        if (data.event == "addCard") {
 
-            broadcast(JSON.stringify({
-                event: "addCard",
-                cardSuit: data.cardSuit,
-                cardNum: data.cardNum,
-            }),);
+        switch (data.event) {
+
+            case "addToPlayPile":
+                broadcast(JSON.stringify({
+                    event: "addToPlayPile",
+                    cardSuit: data.cardSuit,
+                    cardNum: data.cardNum
+                }),);
+                // add to backend deck +++ TODO
+                break;
         }
-        
-        if (data.event == "sendMessage") {
-            broadcast(JSON.stringify({
-                event: "sendMessage",
-                username: sock.username,
-                message: data.message,
-            }),);
-        } 
+
     };
 
 });
