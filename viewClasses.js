@@ -1,5 +1,6 @@
 import {Two} from "./two.js"
 
+
 export class CardView {
     width;
     height;
@@ -34,7 +35,11 @@ export class CardView {
 }
 
 export class HandView {
+
+    currentSelection = [];
+
     constructor(canvas){
+        this.canvas = canvas;
         this.finishedChoosingStarting = false;
 
         var texture = new Two.Texture(image);
@@ -50,15 +55,32 @@ export class HandView {
             canvas.add(this.faceDown[i]);
         }
 
-
         this.handArray = [];
         this.faceUp = [];
         this.canvas = canvas;
     }
 
-
-
     addToHand(card) {
+
+        this.canvas.update();
+        card.sprite.renderer.elem.addEventListener('click', (e) => {
+    
+            let successfulHandle = this.handleClick(card);
+            this.canvas.update();
+    
+        }, false);
+    
+        card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
+    
+            card.draw(card.sprite.translation.x, this.canvas.height - 110);
+            this.canvas.update();
+        });
+    
+        card.sprite.renderer.elem.addEventListener('mouseout', (e) => {
+            
+            card.draw(card.sprite.translation.x, this.canvas.height - 60);
+            this.canvas.update();
+        });
 
         for (let i = 0; i < this.handArray.length; i++) {
             if (this.handArray[i].cardNum >= card.cardNum) {
@@ -95,16 +117,36 @@ export class HandView {
             if (index == -1){
                 return false;
             } else {
-                this.removeFromHand(card, index);
+
+                console.log("trying to play");
+                var oldCard = handArray[index];
+                // Adds a card to the current list of cards to be played
+                const newCard = new CardView(oldCard.suit, oldCard.cardNum, this.canvas);
+                if (currentSelection.length == 0 || card.cardNum == currentSelection[0].cardNum) {
+                    // Adds the new card to the selection if it is of the same type as those in the current selection
+                    currentSelection.push(newCard);
+                } else  {
+                    // Adds all cards in the selection back to your hand
+                    for (let i = 0; i < currentSelection.length; i++) {
+                        addToHand(currentSelection[i].suit, currentSelection[i].cardNum);
+                        currentSelection[i].sprite.remove();
+                    }
+                    currentSelection = [newCard];
+                }
+    
+                // Draws the selected cards to be played
+                for (let i = 0; i < currentSelection.length; i++) {
+                    currentSelection[i].draw(100 + 100 * i, canvas.height - 200);
+                }
+    
+                hand.removeFromHand(card);
+                hand.draw();
             }
 
         }
 
         this.draw();
         return true;
-        
-
-
     }
 
     removeFromHand(card, index) {
@@ -164,18 +206,18 @@ export class PlayPileView {
 
 export class Button {
 
-    constructor(x, y, width, height, text, two) {
+    constructor(x, y, width, height, text, canvas) {
 
-        let rect = two.makeRectangle(x, y, width, height);
+        let rect = canvas.makeRectangle(x, y, width, height);
         rect.fill = '#808080';
 
-        let txt = two.makeText(text, x, y, );
+        let txt = canvas.makeText(text, x, y, );
         txt.size = 20;
         txt.fill = '#FFFFFF';
-        this.group = two.makeGroup(rect, txt);
+        this.group = canvas.makeGroup(rect, txt);
         
 
-        two.add(this.group);
-        two.update();
+        canvas.add(this.group);
+        canvas.update();
     }
 }
