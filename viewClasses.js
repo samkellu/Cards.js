@@ -196,6 +196,9 @@ export class PlayPileView {
         if (this.cards.length == 0 || cardIndex == -1){
             return true;
         }
+        if (card.cardNum == 10 || card.cardNum == 2 || card.cardNum == 3){
+            return true;
+        }
         let compCard = this.cards[this.cards.length-1];
 
         if (compCard.cardNum == 7){
