@@ -73,7 +73,7 @@ function addCard(cardSuit, cardNum) {
 
     card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
 
-        card.draw(card.rect.translation.x, card.rect.translation.y-50);
+        card.draw(card.sprite.translation.x, card.sprite.translation.y-50);
         two.update();
     });
 

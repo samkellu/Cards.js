@@ -21,14 +21,10 @@ export class CardView {
         this.height = image.height;
         var texture = new Two.Texture(image);
         this.sprite = new Two.Sprite(texture);
-        this.rect = canvas.makeRectangle(0, 0, this.width, this.height);
-        this.rect.noStroke();
         canvas.add(this.sprite);
     }
 
     draw(x, y) {
-        this.rect.translation.set(x, y);
-        this.sprite.scale = this.rect.scale;
         this.sprite.translation.set(x, y);
     }
 
