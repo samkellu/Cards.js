@@ -1,23 +1,22 @@
 import {Two} from "./two.js"
 
-
+// A representation of a card and its data to be displayed in the frontend
 export class CardView {
     width;
     height;
-    radius;
     cardNum;
     suit;
     rect;
     sprite;
 
     constructor(suitNum, cardNum, canvas){
-        this.radius = 20;
+
         this.cardNum = cardNum;
         this.suit = suitNum;
-        let filename = "./cardSprites/"+["heart", "diamond", "club", "spade"][suitNum]+cardNum+".png";
 
+        // Initialising card texture
         var image = new Image(60, 96);
-        image.src = filename;
+        image.src = "./cardSprites/"+["heart", "diamond", "club", "spade"][suitNum]+cardNum+".png";
         this.width = image.width;
         this.height = image.height;
         var texture = new Two.Texture(image);
@@ -27,15 +26,19 @@ export class CardView {
         this.isHoverable = true;
     }
 
+    // Draws the card at a given position
     draw(x, y) {
         this.sprite.translation.set(x, y);
     }
 
+    // Removes the card from the canvas
     destroy() {
         this.sprite.remove();
     }
 }
 
+// A visual representation of the player's hand, including the face down/up cards and 
+// the cards to be played
 export class HandView {
 
     canvas;
@@ -45,11 +48,14 @@ export class HandView {
     finishedChoosingStarting;
 
     constructor(canvas){
+
         this.canvas = canvas;
         this.finishedChoosingStarting = false;
 
+        // Initialises the facedown cards' textures
         this.faceDown = []
         for (let i = 0; i < 3; i++){
+
             let image = new Image(60, 96);
             image.src = "./cardSprites/blank1.png";
             let texture = new Two.Texture(image)
@@ -62,14 +68,18 @@ export class HandView {
         this.faceUp = [];
         this.currentSelection = [];
 
+        // Absolute y positions for each set of displayed cards 
         this.handArrayYPos = this.canvas.height - 60;
         this.faceUpYPos = this.canvas.height - 200;
         this.faceDownYPos = this.canvas.height - 210;
         this.currentSelectionYPos = this.canvas.height - 200;
     }
 
+    // Adds a generic hover and click listener to a card
     addListeners(card) {
+
         this.canvas.update();
+
         card.sprite.renderer.elem.addEventListener('click', (e) => {
     
             card.isHoverable = false;
@@ -78,6 +88,7 @@ export class HandView {
     
         });
     
+        // Moves the card when hovered over
         card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
     
             if (card.isHoverable) {
@@ -86,16 +97,19 @@ export class HandView {
             }
         });
     
+        // Returns the card to its regular position after being hovered over
         card.sprite.renderer.elem.addEventListener('mouseout', (e) => {
             
             this.draw();
         });
     }
 
+    // Adds a card to the hand array, allowing them to be played by the user
     addToHand(card) {
 
         this.addListeners(card);
 
+        // Insers the card into the hand array in increasing order of card number
         for (let i = 0; i < this.handArray.length; i++) {
             if (this.handArray[i].cardNum >= card.cardNum) {
                 this.handArray.splice(i, 0, card);
@@ -107,17 +121,20 @@ export class HandView {
         this.draw();
     }
 
-
+    // Handles the different behaviours of cards when clicked 
     handleClick(card){
 
         let index = this.handArray.indexOf(card);
 
+        // Handles the players initial choice of three face up cards
         if (this.finishedChoosingStarting == false){
+            // Clicked card is in the faceUp array, and should be moved to the hand
             if (index == -1){
-                // Card in faceUp.
                 let index = this.faceUp.indexOf(card);
                 this.addToHand(card);
                 this.faceUp.splice(index, 1);
+
+            // Clicked card is in the hand and should be moved into the faceUp array
             } else {
                 this.faceUp.push(card);
                 this.handArray.splice(index, 1);
@@ -129,6 +146,8 @@ export class HandView {
                 }
                 return false;
             }
+
+        // Handles the general case of selecting a card to play
         } else {
             if (index == -1){
                 console.log("cant find card");
@@ -156,12 +175,7 @@ export class HandView {
         return true;
     }
 
-    removeFromHand(card, index) {
-
-        this.handArray.splice(index, 1);
-        card.destroy();
-    }
-
+    // Draws each of the different sets of cards in their required locations
     draw() {
 
         if (!this.finishedChoosingStarting) {
@@ -191,6 +205,7 @@ export class HandView {
     }
 }
 
+// A visual representation of the play pile, which stores the current stack of played cards
 export class PlayPileView {
 
     constructor(canvas) {
@@ -199,13 +214,14 @@ export class PlayPileView {
         this.canvas = canvas;
     }
 
+    // Checks if adding the given card to the play pile is valid
     addIsValid(card){
         if (this.topCardSet.length == 0){
-            console.log('h');
+            console.log('err 0');
             return true;
         }
         if (card.cardNum == 9 || card.cardNum == 1 || card.cardNum == 2){
-            console.log('hh');
+            console.log('err 1');
             return true;
         }
         let compCard = this.topCardSet[0];
@@ -213,18 +229,18 @@ export class PlayPileView {
 
         if (compCard.cardNum == 6){
             if (card.cardNum <= 6 && card.cardNum != 0){
-                console.log('hhh');
+                console.log('err 2');
                 return true;
             }
-            console.log('hhhh');
+            console.log('err 3');
             return false;
         }
         if (compCard.cardNum == 9 || compCard.cardNum == 1){
-            console.log('hhhhh');
+            console.log('err 4');
             return true;
         }
         if (compCard.cardNum == 2){
-            console.log('hhhhhh');
+            console.log('err 5');
             return this.addIsValid(cardIndex-1);
         }
 
@@ -233,30 +249,31 @@ export class PlayPileView {
         }
 
 
-
         if (card.cardNum == 0){
-            console.log('hhhhhhh');
+            console.log('err 6');
             return true;
         } else {
-            console.log('hhhhhhhh');
+            console.log('err 7');
             return card.cardNum >= compCard.cardNum;
         }
     }
 
+    // Adds a card to the play pile, and updates the display of the top of the pile
     addCard(card) {
 
-        // Ensure card added is valid.
-        console.log("Hhdsfuh")
+        // Ensure card to be added is valid.
         if (this.addIsValid(card) == false){
             return false;
         }
 
         if (this.topCardSet.length > 0) {
-            // If the card number matches the one at the top currently.
+            // If the card number matches the one at the top currently, adds it to 
+            // the top of the pile
             if (this.topCardSet[0].cardNum == card.cardNum) {
                 this.topCardSet.push(card);
                 return true;
             } 
+            // Destroys top of pile display and creates a new one for the card if not
             this.topCardSet.forEach(function(pileCard) {
                 pileCard.destroy();
             });
@@ -265,6 +282,7 @@ export class PlayPileView {
         return true;
     }
 
+    // Draws the top of the play pile
     draw() {
         for (let i = 0; i < this.topCardSet.length; i++) {
             this.topCardSet[i].draw(this.canvas.width/3 - this.topCardSet.length*20 + i*40, this.canvas.height/2);
@@ -272,6 +290,8 @@ export class PlayPileView {
     }
 }
 
+// A basic button class consisting of a coloured rectangle with some text.
+// Note that an event listener should  be added externally to the group element.
 export class Button {
 
     constructor(x, y, width, height, text, canvas) {
@@ -283,7 +303,6 @@ export class Button {
         txt.size = 20;
         txt.fill = '#FFFFFF';
         this.group = canvas.makeGroup(rect, txt);
-        
 
         canvas.add(this.group);
         canvas.update();

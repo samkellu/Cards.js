@@ -10,6 +10,7 @@ const deck = new DecksBack();
 
 var running = false;
 
+// Sends a message to al connected clients
 function broadcast(msg) {
 
     for (const client of connected.values()) {
@@ -17,11 +18,13 @@ function broadcast(msg) {
     }
 }
 
+// Sends a message to a specific client
 function sendMessage(user, msg) {
 
     connected.get(user).send(msg);
 }
 
+// Sends a list of all connected clients to all connected clients
 function broadcast_users() {
 
     const usernames = [...connected.keys()];
@@ -31,10 +34,12 @@ function broadcast_users() {
     }),);
 }
 
+// Initialises the backend gamestate, and draws cards from the deck for each player
 function initGamestate() {
     for (let [player, sock] of connected) {
         hands.set(player, new HandBack());
 
+        // TODO should this draw more cards for the faceDown hand cards?
         for (let i = 0; i < 5; i++) {
             var card = deck.draw();
             hands.get(player).addToHand(card);
@@ -48,12 +53,14 @@ function initGamestate() {
     }
 }
 
+// Creates a web socket between the server and a client accessed by username
 router.get("/start_web_socket", async (ctx) => {
 
     
     const sock = await ctx.upgrade();
     const username = ctx.request.url.searchParams.get("username");
     
+    // Checks if there is a client of the same name
     if (connected.has(username)) {
         sock.close(1008, "username is taken");
         return;
@@ -63,6 +70,7 @@ router.get("/start_web_socket", async (ctx) => {
     connected.set(username, sock);
     console.log(`${username} connected to server.`);
     
+    // Sends the client the initial data they require
     sock.onopen = () => {
         broadcast_users();
 
@@ -74,12 +82,14 @@ router.get("/start_web_socket", async (ctx) => {
         }
     };
 
+    // Manages the disconnection of a client
     sock.onclose = () => {
         console.log(`${sock.username} has disconnected.`);
         connected.delete(sock.username);
         broadcast_users();
     };
 
+    // Relays messages from the client to other clients
     sock.onmessage = (m) => {
         const data = JSON.parse(m.data);
 
@@ -105,6 +115,7 @@ router.get("/start_web_socket", async (ctx) => {
     };
 });
 
+// Routing settings
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.use(async (context) => {
