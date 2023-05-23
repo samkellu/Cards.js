@@ -23,6 +23,7 @@ sock.onmessage = (m) => {
             let button = document.getElementById("startButton");
             button.remove();
             document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: block; inset: 0px; position: fixed;");
+            startGame();
             break;
 
         // Another player has played a card -> add it to the top of the play pile
@@ -66,18 +67,14 @@ function startGame(){
         }
         hand.currentSelection = [];
     });
-
-    sock.send(JSON.stringify({
-        event: "startGame",
-    }))
 }
 
 function addCard(cardSuit, cardNum) {
     let card = new CardView(cardSuit, cardNum, two);
 
     hand.addToHand(card);
-    hand.draw();
     two.update();
+    hand.draw();
 }
 
 function addToPlayPile(cardSuit, cardNum) {
@@ -91,7 +88,9 @@ window.onload = () => {
 
 
     document.getElementById("startButton").addEventListener("click", (e) => {
-        startGame();
+        sock.send(JSON.stringify({
+            event: "startGame",
+        }));
     });
 
 };
