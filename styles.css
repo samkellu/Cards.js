@@ -3,3 +3,21 @@
 button {
     z-index: 100000;
 }
+
+.core{
+    display:grid;
+    grid-template-columns: 80% 20%;
+    justify-content: center;
+    border: 1px black;
+    background-color: #b1e0e7;
+    border-radius: 5px;
+    padding:20px;
+}
+
+.users-box{
+    background-color: aliceblue;
+    height:90%;
+    border-radius: 5px;
+    padding: 0;
+    overflow-y: scroll;
+}
