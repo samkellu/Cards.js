@@ -69,6 +69,18 @@ function addCard(cardSuit, cardNum) {
         }),);
     }, false);
 
+    card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
+
+        card.draw(card.rect.translation.x, card.rect.translation.y-50);
+        two.update();
+    });
+
+    card.sprite.renderer.elem.addEventListener('mouseout', (e) => {
+        
+        hand.draw();
+        two.update();
+    });
+
     hand.addToHand(card);
     hand.draw();
     two.update();
@@ -82,20 +94,7 @@ function addToPlayPile(cardSuit, cardNum) {
 
 window.onload = () => {
 
-    document.getElementById("data").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            
-            const input = document.getElementById("data");
-            var message = input.value;
-            input.value = "";
-            sock.send( JSON.stringify({
-                event: "sendMessage",
-                message: message,
-            }),);
-        }
-    });
-
     document.getElementById("startButton").addEventListener("click", (e) => {
         startGame();
-    })
+    });
 };

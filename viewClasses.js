@@ -47,6 +47,14 @@ export class HandView {
     }
 
     addToHand(card) {
+
+        for (let i = 0; i < this.handArray.length; i++) {
+            console.log(card.cardNum + " " + this.handArray[i].cardNum);
+            if (this.handArray[i].cardNum >= card.cardNum) {
+                this.handArray.splice(i, 0, card);
+                return;
+            }
+        }
         this.handArray.push(card);
     }
 
@@ -58,7 +66,7 @@ export class HandView {
 
     draw() {
         for (let i = 0; i < this.handArray.length; i++){
-            this.handArray[i].draw(100+i*120, this.canvas.height);
+            this.handArray[i].draw(100+i*40, this.canvas.height - 40);
         }
     }
 }
@@ -88,7 +96,7 @@ export class PlayPileView {
 
     draw() {
         for (let i = 0; i < this.topCardSet.length; i++) {
-            this.topCardSet[i].draw(100+i*80, 400);
+            this.topCardSet[i].draw(100+i*80, 120);
         }
     }
 }

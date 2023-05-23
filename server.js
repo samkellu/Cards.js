@@ -92,7 +92,9 @@ router.get("/start_web_socket", async (ctx) => {
             case "startGame":
                 initGamestate();
                 console.log("Started Game");
-                broadcast(m);
+                broadcast(JSON.stringify({
+                    event: "startGame"
+                }),);
                 break;
 
             case "addToPlayPile":
