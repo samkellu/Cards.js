@@ -97,19 +97,6 @@ window.onload = () => {
 
     document.getElementById("screen").setAttribute("display", "none");
 
-    document.getElementById("data").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            
-            const input = document.getElementById("data");
-            var message = input.value;
-            input.value = "";
-            sock.send( JSON.stringify({
-                event: "sendMessage",
-                message: message,
-            }),);
-        }
-    });
-
     document.getElementById("startButton").addEventListener("click", (e) => {
         startGame();
     });
