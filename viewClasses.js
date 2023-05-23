@@ -161,3 +161,21 @@ export class PlayPileView {
         }
     }
 }
+
+export class Button {
+
+    constructor(x, y, width, height, text, two) {
+
+        let rect = two.makeRectangle(x, y, width, height);
+        rect.fill = '#808080';
+
+        let txt = two.makeText(text, x, y, );
+        txt.size = 20;
+        txt.fill = '#FFFFFF';
+        this.group = two.makeGroup(rect, txt);
+        
+
+        two.add(this.group);
+        two.update();
+    }
+}

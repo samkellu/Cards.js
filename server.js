@@ -101,11 +101,8 @@ router.get("/start_web_socket", async (ctx) => {
                 }),);
                 // add to backend deck +++ TODO
                 break;
-
         }
-
     };
-
 });
 
 app.use(router.routes());

@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="styles.css">
+        <script type="module" src="./client.js"></script>
+    </head>
+    <body>
+        <div class="core">
+            <div class="title-card">
+                <title>Cards.js</title>
+                <h1>Welcome <p style="font-size: 0.6rem;">to</p> Shithead!</h1>
+                <div id="conversation"></div>
+                
+            </div>
+            <div class="users-box">
+                <h3>Current Users:</h3>
+                
+                <p id="users"></p>
+            </div>
+        </div>
+        <div class="bottom">
+            <div class="joinroomsection">
+                <button id="startButton" class="startButton">+ Start new game</button>
+                <p class="or">OR</p>
+                <form class="join-room-form" onsubmit="event.preventDefault(); joinroom();">
+                    <label for="roomName">Room Name:</label>
+                    <input type="text" id="roomName" name="roomName" required>
+                    <button class="submit" stype="submit" value="Join Room">Join Room</button>
+                </form>
+            </div>
+        </div>
+
+    </body>
+</html>
