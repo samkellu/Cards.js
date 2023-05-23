@@ -225,7 +225,7 @@ export class PlayPileView {
 
         // Ensure card added is valid.
         if (this.addIsValid(card, this.cards.length-1) == false){
-            return false;
+            // return false;
         }
 
 
