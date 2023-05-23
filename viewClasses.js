@@ -61,7 +61,8 @@ export class HandView {
 
     draw() {
         for (let i = 0; i < this.handArray.length; i++){
-            this.handArray[i].draw(100+i*100, this.canvas.height - 60);
+            this.handArray[i].draw(this.canvas.width/2 - (this.handArray.length*100/2) + i*100, this.canvas.height - 60);
+            
         }
     }
 }

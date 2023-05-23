@@ -4,7 +4,7 @@ import {CardView, HandView, PlayPileView} from "./viewClasses.js"
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
 const screen = document.getElementById("screen");
-const two = new Two( {fullscreen: false}).appendTo(screen);
+const two = new Two( {fullscreen: true}).appendTo(screen);
 const hand = new HandView(two);
 const playPile = new PlayPileView();
 
@@ -21,7 +21,7 @@ sock.onmessage = (m) => {
         case "startGame":
             let button = document.getElementById("startButton");
             button.remove();
-            document.getElementById("screen").setAttribute("display", "block");
+            document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: block; inset: 0px; position: fixed;");
             break;
 
         // Another player has played a card -> add it to the top of the play pile
@@ -95,8 +95,11 @@ function addToPlayPile(cardSuit, cardNum) {
 }
 
 window.onload = () => {
+    document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: none; inset: 0px; position: fixed;");
+
 
     document.getElementById("startButton").addEventListener("click", (e) => {
         startGame();
     });
+
 };
