@@ -6,7 +6,7 @@ const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${user
 const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
 const hand = new HandView(two);
-const playPile = new PlayPileView();
+const playPile = new PlayPileView(two);
 
 sock.onmessage = (m) => {
     const data = JSON.parse(m.data);

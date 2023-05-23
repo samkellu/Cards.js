@@ -66,9 +66,10 @@ export class HandView {
 
 export class PlayPileView {
 
-    constructor() {
+    constructor(canvas) {
         this.cards = [];
         this.topCardSet = [];
+        this.canvas = canvas;
     }
 
     addCard(card) {
@@ -89,7 +90,7 @@ export class PlayPileView {
 
     draw() {
         for (let i = 0; i < this.topCardSet.length; i++) {
-            this.topCardSet[i].draw(100+i*80, 120);
+            this.topCardSet[i].draw(this.canvas.width/3 - this.topCardSet.length*20 + i*40, this.canvas.height/2);
         }
     }
 }
