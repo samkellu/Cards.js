@@ -61,15 +61,17 @@ function addCard(cardSuit, cardNum) {
     two.update();
     card.sprite.renderer.elem.addEventListener('click', (e) => {
 
-        hand.removeFromHand(card);
-        hand.draw();
+        let successfulHandle = hand.handleClick(card);
         two.update();
+        if (hand.finishedChoosingStarting && successfulHandle){
+            sock.send( JSON.stringify({
+                event: "addToPlayPile",
+                cardSuit: card.suit,
+                cardNum: card.cardNum,
+            }),);
+        }
 
-        sock.send( JSON.stringify({
-            event: "addToPlayPile",
-            cardSuit: card.suit,
-            cardNum: card.cardNum,
-        }),);
+        
     }, false);
 
     card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
