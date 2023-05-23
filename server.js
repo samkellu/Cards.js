@@ -26,6 +26,9 @@ function broadcast_users() {
 }
 
 function initGamestate() {
+    broadcast(JSON.stringify({
+        event: "startGame",
+    }));
     for (let [player, hand] of hands) {
         for (let i = 0; i < 6; i++) {
             var card = deck.draw();
@@ -58,7 +61,7 @@ router.get("/start_web_socket", async (ctx) => {
     sock.onopen = () => {
         hands.set(username, new HandBack());
         broadcast_users();
-        initGamestate();
+        // initGamestate();
     };
 
     sock.onclose = () => {
@@ -72,6 +75,11 @@ router.get("/start_web_socket", async (ctx) => {
 
         switch (data.event) {
 
+            case "startGame":
+                initGamestate();
+                console.log("Started Game");
+                break;
+
             case "addToPlayPile":
                 broadcast(JSON.stringify({
                     event: "addToPlayPile",
@@ -80,6 +88,7 @@ router.get("/start_web_socket", async (ctx) => {
                 }),);
                 // add to backend deck +++ TODO
                 break;
+
         }
 
     };

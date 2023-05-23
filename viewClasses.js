@@ -40,9 +40,10 @@ export class CardView {
 }
 
 export class HandView {
-    constructor(){
+    constructor(canvas){
         this.handArray = [];
         this.faceUp = [];
+        this.canvas = canvas;
     }
 
     addToHand(card) {
@@ -57,7 +58,7 @@ export class HandView {
 
     draw() {
         for (let i = 0; i < this.handArray.length; i++){
-            this.handArray[i].draw(100+i*120, 900);
+            this.handArray[i].draw(100+i*120, this.canvas.height);
         }
     }
 }

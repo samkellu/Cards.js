@@ -4,8 +4,8 @@ import {CardView, HandView, PlayPileView} from "./viewClasses.js"
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
 const screen = document.getElementById("screen");
-const two = new Two( {fullscreen: true}).appendTo(screen);
-const hand = new HandView();
+const two = new Two( {fullscreen: false}).appendTo(screen);
+const hand = new HandView(two);
 const playPile = new PlayPileView();
 
 sock.onmessage = (m) => {
@@ -13,6 +13,10 @@ sock.onmessage = (m) => {
 
     switch (data.event) {
 
+        case "startGame":
+            let button = document.getElementById("startButton");
+            button.remove();
+            break;
         // Another player has played a card -> add it to the top of the play pile
         case "addToPlayPile":
             addToPlayPile(data.cardSuit, data.cardNum);
@@ -21,6 +25,7 @@ sock.onmessage = (m) => {
         // Add the given card to the player's hand
         case "addCard":
             addCard(data.cardSuit, data.cardNum);
+            console.log("Added card", data.cardSuit, data.cardNum);
             break;
         
         case "setUserList":
@@ -33,6 +38,13 @@ sock.onmessage = (m) => {
             break;
     }
 };
+
+function startGame(){
+    console.log("Started game");
+    sock.send(JSON.stringify({
+        event: "startGame",
+    }))
+}
 
 function addCard(cardSuit, cardNum) {
     let card = new CardView(cardSuit, cardNum, two);
@@ -77,4 +89,8 @@ window.onload = () => {
             }),);
         }
     });
+
+    document.getElementById("startButton").addEventListener("click", (e) => {
+        startGame();
+    })
 };
