@@ -36,7 +36,15 @@ export class CardView {
 
 export class HandView {
 
-    currentSelection = [];
+    canvas;
+    faceDown;
+    faceUp;
+    handArray;
+    sprite;
+    finishedChoosingStarting;
+
+
+    
 
     constructor(canvas){
         this.canvas = canvas;
@@ -58,6 +66,7 @@ export class HandView {
         this.handArray = [];
         this.faceUp = [];
         this.canvas = canvas;
+        this.currentSelection = [];
     }
 
     addToHand(card) {
@@ -156,15 +165,19 @@ export class HandView {
 
     draw() {
 
+        
+
+        // Draw all face down cards
         for (let i = 0; i < this.faceDown.length; i++){
             this.faceDown[i].translation.set(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.canvas.height-200);
         }
 
+        // Draw all face up cards
         for (let i = 0; i < this.faceUp.length; i++){
             this.faceUp[i].draw(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.canvas.height-190);
-
         }
 
+        // Draw all cards in the player's hand
         for (let i = 0; i < this.handArray.length; i++){
             this.handArray[i].draw(this.canvas.width/2 - (this.handArray.length*100/2) + i*100, this.canvas.height - 60);
         }
@@ -179,19 +192,51 @@ export class PlayPileView {
         this.canvas = canvas;
     }
 
+    addIsValid(card, cardIndex){
+        if (this.cards.length == 0 || cardIndex == -1){
+            return true;
+        }
+        let compCard = this.cards[this.cards.length-1];
+
+        if (compCard.cardNum == 7){
+            if (card.cardNum <= 7 && card.cardNum != 0){
+                return true;
+            }
+            return false;
+        }
+        if (compCard.cardNum == 10 || compCard.cardNum == 2){
+            return true;
+        }
+        if (compCard.cardNum == 3){
+            return this.addIsValid(cardIndex-1);
+        }
+        if (card.cardNum == 0){
+            return true;
+        } else {
+            return card.cardNum >= compCard.cardNum;
+        }
+
+
+    }
+
     addCard(card) {
 
+        // Ensure card added is valid.
+        if (this.addIsValid(card, this.cards.length-1) == false){
+            return false;
+        }
+
+
         if (this.topCardSet.length > 0) {
+            // If the card number matches the one at the top currently.
             if (this.topCardSet[0].cardNum == card.cardNum) {
                 this.topCardSet.push(card);
                 return;
             } 
-
             this.topCardSet.forEach(function(pileCard) {
                 pileCard.destroy();
             });
         }
-
         this.topCardSet = [card];
     }
 
