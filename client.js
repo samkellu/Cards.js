@@ -7,6 +7,7 @@ const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
 const hand = new HandView(two);
 const playPile = new PlayPileView();
+let currentSelection = [];
 
 sock.onmessage = (m) => {
     const data = JSON.parse(m.data);
@@ -61,15 +62,31 @@ function addCard(cardSuit, cardNum) {
     two.update();
     card.sprite.renderer.elem.addEventListener('click', (e) => {
 
+        const newCard = new CardView(cardSuit, cardNum, two);
+        if (currentSelection.length == 0 || card.cardNum == currentSelection[0].cardNum) {
+            currentSelection.push(newCard);
+        } else  {
+            for (let i = 0; i < currentSelection.length; i++) {
+                console.log(currentSelection[i].suit);
+                addCard(currentSelection[i].suit, currentSelection[i].cardNum);
+                currentSelection[i].sprite.remove();
+            }
+            currentSelection = [newCard];
+        }
+        
+        for (let i = 0; i < currentSelection.length; i++) {
+            currentSelection[i].draw(100 + 100 * i, two.height - 200);
+        }
+        
         hand.removeFromHand(card);
         hand.draw();
         two.update();
 
-        sock.send( JSON.stringify({
-            event: "addToPlayPile",
-            cardSuit: card.suit,
-            cardNum: card.cardNum,
-        }),);
+        // sock.send( JSON.stringify({
+        //     event: "addToPlayPile",
+        //     cardSuit: card.suit,
+        //     cardNum: card.cardNum,
+        // }),);
     }, false);
 
     card.sprite.renderer.elem.addEventListener('mouseover', (e) => {

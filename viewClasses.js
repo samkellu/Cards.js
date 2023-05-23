@@ -93,3 +93,16 @@ export class PlayPileView {
         }
     }
 }
+
+// export class Button {
+
+//     constructor(x, y, width, height, two) {
+//         this.x = x;
+//         this.y = y;
+//         this.width = width;
+//         this.height = height;
+//         this.two = two;
+
+//         let rect = new 
+//     }
+// }
