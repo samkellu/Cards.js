@@ -13,6 +13,11 @@ sock.onmessage = (m) => {
 
     switch (data.event) {
 
+        case "invalid":
+            console.log(data.message);
+            exit();
+            break;
+
         case "startGame":
             let button = document.getElementById("startButton");
             button.remove();

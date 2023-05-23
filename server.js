@@ -3,17 +3,23 @@ import { CardBack, HandBack, DecksBack } from "./backendClasses.js";
 
 const connected = new Map();
 const hands = new Map();
-
 const app = new Application();
 const port = 8080;
 const router = new Router();
 const deck = new DecksBack();
+
+var running = false;
 
 function broadcast(msg) {
 
     for (const client of connected.values()) {
         client.send(msg);
     }
+}
+
+function sendMessage(user, msg) {
+
+    connected.get(user).send(msg);
 }
 
 function broadcast_users() {
@@ -29,12 +35,15 @@ function initGamestate() {
     broadcast(JSON.stringify({
         event: "startGame",
     }));
-    for (let [player, hand] of hands) {
+    
+    for (let [player, sock] of connected) {
+        hands.set(player, new HandBack());
+
         for (let i = 0; i < 6; i++) {
             var card = deck.draw();
-            hand.addToHand(card);
+            hands.get(player).addToHand(card);
 
-            broadcast(JSON.stringify({
+            sendMessage(player, JSON.stringify({
                 event: "addCard",
                 cardSuit: card.suit,
                 cardNum: card.num
@@ -59,9 +68,14 @@ router.get("/start_web_socket", async (ctx) => {
     console.log(`${username} connected to server.`);
     
     sock.onopen = () => {
-        hands.set(username, new HandBack());
         broadcast_users();
-        // initGamestate();
+
+        if (running) {
+            sock.send(JSON.stringify({
+                event: "invalid",
+                message: "The game has already begun"
+            }));
+        }
     };
 
     sock.onclose = () => {
@@ -78,6 +92,7 @@ router.get("/start_web_socket", async (ctx) => {
             case "startGame":
                 initGamestate();
                 console.log("Started Game");
+                broadcast(m);
                 break;
 
             case "addToPlayPile":
