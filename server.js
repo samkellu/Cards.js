@@ -32,14 +32,10 @@ function broadcast_users() {
 }
 
 function initGamestate() {
-    broadcast(JSON.stringify({
-        event: "startGame",
-    }));
-    
     for (let [player, sock] of connected) {
         hands.set(player, new HandBack());
 
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 5; i++) {
             var card = deck.draw();
             hands.get(player).addToHand(card);
 

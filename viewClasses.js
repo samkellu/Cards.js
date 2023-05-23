@@ -29,7 +29,6 @@ export class CardView {
     }
 
     destroy() {
-        this.rect.remove();
         this.sprite.remove();
     }
 }
@@ -44,7 +43,6 @@ export class HandView {
     addToHand(card) {
 
         for (let i = 0; i < this.handArray.length; i++) {
-            console.log(card.cardNum + " " + this.handArray[i].cardNum);
             if (this.handArray[i].cardNum >= card.cardNum) {
                 this.handArray.splice(i, 0, card);
                 return;
@@ -62,7 +60,6 @@ export class HandView {
     draw() {
         for (let i = 0; i < this.handArray.length; i++){
             this.handArray[i].draw(this.canvas.width/2 - (this.handArray.length*100/2) + i*100, this.canvas.height - 60);
-            
         }
     }
 }
