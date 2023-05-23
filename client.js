@@ -13,7 +13,6 @@ sock.onmessage = (m) => {
 
     switch (data.event) {
 
-
         case "invalid":
             console.log(data.message);
             exit();

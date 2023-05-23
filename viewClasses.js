@@ -74,7 +74,6 @@ export class HandView {
     
             card.isHoverable = false;
             let successfulHandle = this.handleClick(card);
-            console.log("drawing");
             this.draw();
     
         });
@@ -120,7 +119,6 @@ export class HandView {
                 this.addToHand(card);
                 this.faceUp.splice(index, 1);
             } else {
-                console.log("adding to faceup");
                 this.faceUp.push(card);
                 this.handArray.splice(index, 1);
                 if (this.faceUp.length == 3){
@@ -133,11 +131,10 @@ export class HandView {
             }
         } else {
             if (index == -1){
-                console.log("cant find");
+                console.log("cant find card");
                 return false;
             } else {
 
-                console.log("trying to play");
                 var currCard = this.handArray[index];
                 // Adds a card to the current list of cards to be played
                 if (this.currentSelection.length == 0 || card.cardNum == this.currentSelection[0].cardNum) {
@@ -161,7 +158,6 @@ export class HandView {
 
     removeFromHand(card, index) {
 
-        console.log("Removed card from hand");
         this.handArray.splice(index, 1);
         card.destroy();
     }
@@ -203,55 +199,70 @@ export class PlayPileView {
         this.canvas = canvas;
     }
 
-    addIsValid(card, cardIndex){
-        if (this.cards.length == 0 || cardIndex == -1){
+    addIsValid(card){
+        if (this.topCardSet.length == 0){
+            console.log('h');
             return true;
         }
-        if (card.cardNum == 10 || card.cardNum == 2 || card.cardNum == 3){
+        if (card.cardNum == 9 || card.cardNum == 1 || card.cardNum == 2){
+            console.log('hh');
             return true;
         }
-        let compCard = this.cards[this.cards.length-1];
+        let compCard = this.topCardSet[0];
+        console.log("Comp card is: ", compCard.cardNum);
 
-        if (compCard.cardNum == 7){
-            if (card.cardNum <= 7 && card.cardNum != 0){
+        if (compCard.cardNum == 6){
+            if (card.cardNum <= 6 && card.cardNum != 0){
+                console.log('hhh');
                 return true;
             }
+            console.log('hhhh');
             return false;
         }
-        if (compCard.cardNum == 10 || compCard.cardNum == 2){
+        if (compCard.cardNum == 9 || compCard.cardNum == 1){
+            console.log('hhhhh');
             return true;
         }
-        if (compCard.cardNum == 3){
+        if (compCard.cardNum == 2){
+            console.log('hhhhhh');
             return this.addIsValid(cardIndex-1);
         }
-        if (card.cardNum == 0){
-            return true;
-        } else {
-            return card.cardNum >= compCard.cardNum;
+
+        if (compCard.cardNum == 0){
+            return false;
         }
 
 
+
+        if (card.cardNum == 0){
+            console.log('hhhhhhh');
+            return true;
+        } else {
+            console.log('hhhhhhhh');
+            return card.cardNum >= compCard.cardNum;
+        }
     }
 
     addCard(card) {
 
         // Ensure card added is valid.
-        if (this.addIsValid(card, this.cards.length-1) == false){
-            // return false;
+        console.log("Hhdsfuh")
+        if (this.addIsValid(card) == false){
+            return false;
         }
-
 
         if (this.topCardSet.length > 0) {
             // If the card number matches the one at the top currently.
             if (this.topCardSet[0].cardNum == card.cardNum) {
                 this.topCardSet.push(card);
-                return;
+                return true;
             } 
             this.topCardSet.forEach(function(pileCard) {
                 pileCard.destroy();
             });
         }
         this.topCardSet = [card];
+        return true;
     }
 
     draw() {
