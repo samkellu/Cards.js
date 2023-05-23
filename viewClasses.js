@@ -15,16 +15,15 @@ export class CardView {
         this.suit = suitNum;
         let filename = "./cardSprites/"+["heart", "diamond", "club", "spade"][suitNum]+cardNum+".png";
 
-        var image = new Image(100,100);
+        var image = new Image(60, 96);
         image.src = filename;
+        this.width = image.width;
+        this.height = image.height;
         var texture = new Two.Texture(image);
         this.sprite = new Two.Sprite(texture);
         this.rect = canvas.makeRectangle(0, 0, this.width, this.height);
         this.rect.noStroke();
         canvas.add(this.sprite);
-
-        this.width = image.width;
-        this.height = image.height;
     }
 
     draw(x, y) {
