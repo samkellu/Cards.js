@@ -6,8 +6,8 @@ const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${user
 const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
 const hand = new HandView(two);
-const playPile = new PlayPileView();
 let currentSelection = [];
+const playPile = new PlayPileView(two);
 
 sock.onmessage = (m) => {
     const data = JSON.parse(m.data);
@@ -80,29 +80,31 @@ function addCard(cardSuit, cardNum) {
     two.update();
     card.sprite.renderer.elem.addEventListener('click', (e) => {
 
-        // Adds a card to the current list of cards to be played
-        const newCard = new CardView(cardSuit, cardNum, two);
-        if (currentSelection.length == 0 || card.cardNum == currentSelection[0].cardNum) {
-            // Adds the new card to the selection if it is of the same type as those in the current selection
-            currentSelection.push(newCard);
-        } else  {
-            // Adds all cards in the selection back to your hand
-            for (let i = 0; i < currentSelection.length; i++) {
-                addCard(currentSelection[i].suit, currentSelection[i].cardNum);
-                currentSelection[i].sprite.remove();
-            }
-            currentSelection = [newCard];
-        }
-        
-        // Draws the selected cards to be played
-        for (let i = 0; i < currentSelection.length; i++) {
-            currentSelection[i].draw(100 + 100 * i, two.height - 200);
-        }
-        
-        hand.removeFromHand(card);
-        hand.draw();
+        let successfulHandle = hand.handleClick(card);
         two.update();
+        if (hand.finishedChoosingStarting && successfulHandle){
+            // Adds a card to the current list of cards to be played
+            const newCard = new CardView(cardSuit, cardNum, two);
+            if (currentSelection.length == 0 || card.cardNum == currentSelection[0].cardNum) {
+                // Adds the new card to the selection if it is of the same type as those in the current selection
+                currentSelection.push(newCard);
+            } else  {
+                // Adds all cards in the selection back to your hand
+                for (let i = 0; i < currentSelection.length; i++) {
+                    addCard(currentSelection[i].suit, currentSelection[i].cardNum);
+                    currentSelection[i].sprite.remove();
+                }
+                currentSelection = [newCard];
+            }
 
+            // Draws the selected cards to be played
+            for (let i = 0; i < currentSelection.length; i++) {
+                currentSelection[i].draw(100 + 100 * i, two.height - 200);
+            }
+
+            hand.removeFromHand(card);
+            hand.draw();
+        }
     }, false);
 
     card.sprite.renderer.elem.addEventListener('mouseover', (e) => {

@@ -1,7 +1,19 @@
 
 
-button {
-    z-index: 100000;
+button, .submit {
+    border-radius: 10px;
+    background-color: #527be2;
+    color:aliceblue;
+}
+
+button:hover, .submit:hover{
+    background-color: #0633a4;
+}
+
+.startButton{
+    margin:20%;
+    margin-bottom:20px;
+    margin-top:20px;
 }
 
 .core{
@@ -20,4 +32,33 @@ button {
     border-radius: 5px;
     padding: 0;
     overflow-y: scroll;
+}
+
+.bottom{
+    display:flex;
+    justify-content: center;
+    padding-top: 10vh;
+}
+
+.joinroomsection{
+    width: 30vw;
+    height: 40vh;
+    background-color: #b1e0e7;
+    border-radius: 15px;
+    overflow-wrap:break-word;
+    display:grid;
+
+}
+
+.join-room-form{
+    max-width:100%;
+    text-align: center;
+}
+
+.or{
+    border-bottom:10px #0633a4;
+    border-top:10px #0633a4;
+    text-align: center;
+    margin:0;
+    padding:0;
 }
