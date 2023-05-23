@@ -83,6 +83,7 @@ export class HandView {
     
             card.draw(card.sprite.translation.x, this.canvas.height - 110);
             this.canvas.update();
+            this.draw();
         });
     
         card.sprite.renderer.elem.addEventListener('mouseout', (e) => {
@@ -106,14 +107,13 @@ export class HandView {
         let index = this.handArray.indexOf(card);
 
         if (this.finishedChoosingStarting == false){
+            console.log("adding to faceup");
             if (index == -1){
                 // Card in faceUp.
                 let index = this.faceUp.indexOf(card);
                 this.addToHand(card);
                 this.faceUp.splice(index, 1);
-                console.log("Removed card from faceup");
             } else {
-                console.log("Added card to faceUp");
                 this.faceUp.push(card);
                 this.handArray.splice(index, 1);
                 if (this.faceUp.length == 3){
@@ -124,37 +124,35 @@ export class HandView {
             }
         } else {
             if (index == -1){
+                console.log("cant find");
                 return false;
             } else {
 
                 console.log("trying to play");
-                var oldCard = handArray[index];
+                var oldCard = this.handArray[index];
                 // Adds a card to the current list of cards to be played
                 const newCard = new CardView(oldCard.suit, oldCard.cardNum, this.canvas);
-                if (currentSelection.length == 0 || card.cardNum == currentSelection[0].cardNum) {
+                if (this.currentSelection.length == 0 || card.cardNum == this.currentSelection[0].cardNum) {
                     // Adds the new card to the selection if it is of the same type as those in the current selection
-                    currentSelection.push(newCard);
+                    this.currentSelection.push(newCard);
                 } else  {
                     // Adds all cards in the selection back to your hand
-                    for (let i = 0; i < currentSelection.length; i++) {
-                        addToHand(currentSelection[i].suit, currentSelection[i].cardNum);
-                        currentSelection[i].sprite.remove();
+                    for (let i = 0; i < this.currentSelection.length; i++) {
+                        addToHand(this.currentSelection[i].suit, this.currentSelection[i].cardNum);
+                        this.currentSelection[i].sprite.remove();
                     }
-                    currentSelection = [newCard];
+                    this.currentSelection = [newCard];
                 }
     
                 // Draws the selected cards to be played
-                for (let i = 0; i < currentSelection.length; i++) {
-                    currentSelection[i].draw(100 + 100 * i, canvas.height - 200);
+                for (let i = 0; i < this.currentSelection.length; i++) {
+                    this.currentSelection[i].draw(100 + 100 * i, this.canvas.height - 200);
                 }
     
-                hand.removeFromHand(card);
-                hand.draw();
+                this.removeFromHand(card);
             }
-
         }
 
-        this.draw();
         return true;
     }
 

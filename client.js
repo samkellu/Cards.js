@@ -53,18 +53,18 @@ function startGame(){
     let playCardBtn = new Button(two.width-200, two.height-200, 100, 20, "play", two);
     playCardBtn.group.renderer.elem.addEventListener('click', (e) => {
 
-        for (let i = 0; i < currentSelection.length; i++) {
+        for (let i = 0; i < hand.currentSelection.length; i++) {
 
-            let card = currentSelection[i];
+            let card = hand.currentSelection[i];
             sock.send( JSON.stringify({
                 event: "addToPlayPile",
                 cardSuit: card.suit,
                 cardNum: card.cardNum,
             }),);
 
-            currentSelection[i].sprite.remove();
+            hand.currentSelection[i].sprite.remove();
         }
-        currentSelection = [];
+        hand.currentSelection = [];
     });
 
     sock.send(JSON.stringify({
