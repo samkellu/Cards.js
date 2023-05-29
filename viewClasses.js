@@ -45,12 +45,20 @@ export class HandView {
     faceDown;
     faceUp;
     handArray;
-    finishedChoosingStarting;
+    ready;
+    readyBtn;
+    playCardBtn;
+    sock;
+    username;
 
-    constructor(canvas){
+    constructor(canvas, sock, username){
 
         this.canvas = canvas;
-        this.finishedChoosingStarting = false;
+        this.ready = false;
+        this.readyBtn = null;
+        this.playCardBtn = null;
+        this.sock = sock;
+        this.username = username;
 
         // Initialises the facedown cards' textures
         this.faceDown = []
@@ -121,27 +129,75 @@ export class HandView {
         this.draw();
     }
 
+    // Makes the button that allows players to add cards to the playpile
+    makePlayButton() {
+        this.playCardBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "play", this.canvas);
+
+        this.playCardBtn.group.renderer.elem.addEventListener('click', (e) => {
+
+            for (let i = 0; i < this.currentSelection.length; i++) {
+
+                let card = this.currentSelection[i];
+                this.sock.send( JSON.stringify({
+                    event: "addToPlayPile",
+                    cardSuit: card.suit,
+                    cardNum: card.cardNum,
+                }),);
+
+                this.currentSelection[i].sprite.remove();
+            }
+            this.currentSelection = [];
+        });
+    }
+
+    removePlayButton() {
+        this.playCardBtn.destroy();
+    }
+
     // Handles the different behaviours of cards when clicked 
     handleClick(card){
 
         let index = this.handArray.indexOf(card);
 
         // Handles the players initial choice of three face up cards
-        if (this.finishedChoosingStarting == false){
+        if (this.ready == false){
             // Clicked card is in the faceUp array, and should be moved to the hand
             if (index == -1){
+
+                if (this.faceUp.length == 3) {
+
+                    this.readyBtn.destroy();
+                }
+
                 let index = this.faceUp.indexOf(card);
                 this.addToHand(card);
                 this.faceUp.splice(index, 1);
 
             // Clicked card is in the hand and should be moved into the faceUp array
             } else {
-                this.faceUp.push(card);
-                this.handArray.splice(index, 1);
+                if (this.faceUp.length < 3) {
+
+                    this.faceUp.push(card);
+                    this.handArray.splice(index, 1);
+                }
+
                 if (this.faceUp.length == 3){
+                    
+                    // Allows the player to ready up when theyve selected their cards
+                    this.readyBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "Ready", this.canvas);
+
+                    this.readyBtn.group.renderer.elem.addEventListener('click', (e) => {
+                        this.ready = true;
+                        this.readyBtn.destroy();
+
+                        this.sock.send(JSON.stringify({
+                            event: "ready",
+                            player: this.username
+                        }),)
+                    });
+
                     this.draw();
                     this.canvas.update();
-                    this.finishedChoosingStarting = true;
                     return false;
                 }
                 return false;
@@ -181,7 +237,6 @@ export class HandView {
         if (!this.finishedChoosingStarting) {
             // Draw all face down cards
             for (let i = 0; i < this.faceDown.length; i++){
-                console.log(this.faceDown[i]);
                 this.faceDown[i].translation.set(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.faceDownYPos);
             }
     
@@ -306,5 +361,9 @@ export class Button {
 
         canvas.add(this.group);
         canvas.update();
+    }
+
+    destroy() {
+        this.group.remove();
     }
 }

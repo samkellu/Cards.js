@@ -1,8 +1,22 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 import { CardBack, HandBack, DecksBack } from "./backendClasses.js";
 
-const connected = new Map();
-const hands = new Map();
+// Struct to represent a user and their information
+class User {
+
+    constructor(name, sock, hand, ready) {
+        this.name = name;
+        this.sock = sock;
+        this.hand = hand;
+        this.ready = ready;
+    }
+
+    send(msg) {
+        this.sock.send(msg);
+    }
+}
+
+const users = new Map();
 const app = new Application();
 const port = 8080;
 const router = new Router();
@@ -13,38 +27,40 @@ var running = false;
 // Sends a message to al connected clients
 function broadcast(msg) {
 
-    for (const client of connected.values()) {
-        client.send(msg);
+    for (const user of users.values()) {
+        user.send(msg);
     }
 }
 
 // Sends a message to a specific client
 function sendMessage(user, msg) {
 
-    connected.get(user).send(msg);
+    user.send(msg);
 }
 
 // Sends a list of all connected clients to all connected clients
 function broadcast_users() {
 
-    const usernames = [...connected.keys()];
-    broadcast(JSON.stringify({
-        event: "setUserList",
-        usernames: usernames,
-    }),);
+    let userString = '{"event": "setUserList", "users": [';
+    for (const user of users.values()) {
+        userString += '{"username": "' + user.name + '", "ready": "' + user.ready + '"},'
+    }
+    userString = userString.slice(0, -1);
+    userString += ']}'
+    broadcast(userString);
 }
 
 // Initialises the backend gamestate, and draws cards from the deck for each player
 function initGamestate() {
-    for (let [player, sock] of connected) {
-        hands.set(player, new HandBack());
+    for (const user of users.values()) {
+        user.hand = new HandBack();
 
         // TODO should this draw more cards for the faceDown hand cards?
         for (let i = 0; i < 5; i++) {
             var card = deck.draw();
-            hands.get(player).addToHand(card);
+            user.hand.addToHand(card);
 
-            sendMessage(player, JSON.stringify({
+            sendMessage(user, JSON.stringify({
                 event: "addCard",
                 cardSuit: card.suit,
                 cardNum: card.num
@@ -61,13 +77,13 @@ router.get("/start_web_socket", async (ctx) => {
     const username = ctx.request.url.searchParams.get("username");
     
     // Checks if there is a client of the same name
-    if (connected.has(username)) {
+    if (users.has(username)) {
         sock.close(1008, "username is taken");
         return;
     }
     
     sock.username = username;
-    connected.set(username, sock);
+    users.set(username, new User(username, sock, null, 0));
     console.log(`${username} connected to server.`);
     
     // Sends the client the initial data they require
@@ -85,7 +101,7 @@ router.get("/start_web_socket", async (ctx) => {
     // Manages the disconnection of a client
     sock.onclose = () => {
         console.log(`${sock.username} has disconnected.`);
-        connected.delete(sock.username);
+        users.delete(sock.username);
         broadcast_users();
     };
 
@@ -110,6 +126,30 @@ router.get("/start_web_socket", async (ctx) => {
                     cardNum: data.cardNum
                 }),);
                 // add to backend deck +++ TODO
+                break;
+
+            case "ready":
+                console.log("Player " + data.player + " is ready!");
+                users.get(data.player).ready = 1;
+                broadcast_users();
+
+                let valid = true;
+                for (const user of users.values()) {
+                    if (user.ready != 1) {
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if (valid) {
+                    for (const user of users.values()) {
+                        user.ready = -1;
+                    }
+                    broadcast_users();
+                    broadcast(JSON.stringify({
+                        event: "allReady"
+                    }),);
+                }
                 break;
         }
     };

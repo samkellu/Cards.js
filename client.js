@@ -5,7 +5,7 @@ const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
 const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
-const hand = new HandView(two);
+const hand = new HandView(two, sock, username);
 const playPile = new PlayPileView(two);
 
 // Handles a message as it is received from the server's websocket
@@ -29,6 +29,10 @@ sock.onmessage = (m) => {
             startGame();
             break;
 
+        case "allReady":
+            hand.makePlayButton();
+            break;
+
         // Another player has played a card -> add it to the top of the play pile
         case "addToPlayPile":
             addToPlayPile(data.cardSuit, data.cardNum);
@@ -43,8 +47,17 @@ sock.onmessage = (m) => {
         // Sets the list of currently connected users
         case "setUserList":
             let userListStr = "";
-            for (const username of data.usernames) {
-                userListStr += `<div> ${username} </div>`;
+            for (const user of data.users) {
+                let readyString = `<span style="color: green; font-weight: bold;">READY</span>`;
+                if (user.ready == 0) {
+                    readyString = `<span style="color: red; font-weight: bold;">NOT READY</span>`;
+                }
+
+                if (user.ready == -1) {
+                    readyString = "";
+                }
+
+                userListStr += `<div> ${user.name} ${readyString}</div>`;
             }
 
             document.getElementById("users").innerHTML = userListStr;
@@ -55,25 +68,6 @@ sock.onmessage = (m) => {
 // Handles the initialisation of the gamespace
 function startGame(){
 
-    // Creates buttons and other necessary components for gameplay
-    let playCardBtn = new Button(two.width-200, two.height-200, 100, 20, "play", two);
-
-    // TODO - I feel like we should have some kind of validity checking before we send this to the server aswell
-    playCardBtn.group.renderer.elem.addEventListener('click', (e) => {
-
-        for (let i = 0; i < hand.currentSelection.length; i++) {
-
-            let card = hand.currentSelection[i];
-            sock.send( JSON.stringify({
-                event: "addToPlayPile",
-                cardSuit: card.suit,
-                cardNum: card.cardNum,
-            }),);
-
-            hand.currentSelection[i].sprite.remove();
-        }
-        hand.currentSelection = [];
-    });
 }
 
 // Adds a card to the player's hand to be displayed
