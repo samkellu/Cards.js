@@ -130,23 +130,34 @@ export class HandView {
     }
 
     // Makes the button that allows players to add cards to the playpile
-    makePlayButton() {
+    makePlayButton(pile) {
         this.playCardBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "play", this.canvas);
 
         this.playCardBtn.group.renderer.elem.addEventListener('click', (e) => {
 
-            for (let i = 0; i < this.currentSelection.length; i++) {
-
-                let card = this.currentSelection[i];
-                this.sock.send( JSON.stringify({
-                    event: "addToPlayPile",
-                    cardSuit: card.suit,
-                    cardNum: card.cardNum,
-                }),);
-
-                this.currentSelection[i].sprite.remove();
+            // Only allow the player to play the card if it is a valid play:
+            if (!pile.addIsValid(this.currentSelection[0])){
+                // Invalid play.
+                // Adds all cards in the selection back to your hand
+                for (let i = 0; i < this.currentSelection.length; i++) {
+                    this.currentSelection[i].isHoverable = true;
+                    this.handArray.push(this.currentSelection[i]);
+                }
+            } else {
+                // Valid play
+                for (let i = 0; i < this.currentSelection.length; i++) {
+                    let card = this.currentSelection[i];
+                    this.sock.send( JSON.stringify({
+                        event: "addToPlayPile",
+                        cardSuit: card.suit,
+                        cardNum: card.cardNum,
+                    }),);
+    
+                    this.currentSelection[i].sprite.remove();
+                }
             }
             this.currentSelection = [];
+            this.canvas.update();
         });
     }
 
@@ -270,11 +281,9 @@ export class PlayPileView {
     // Checks if adding the given card to the play pile is valid
     addIsValid(card){
         if (this.topCardSet.length == 0){
-            console.log('err 0');
             return true;
         }
         if (card.cardNum == 9 || card.cardNum == 1 || card.cardNum == 2){
-            console.log('err 1');
             return true;
         }
         let compCard = this.topCardSet[0];
@@ -282,31 +291,30 @@ export class PlayPileView {
 
         if (compCard.cardNum == 6){
             if (card.cardNum <= 6 && card.cardNum != 0){
-                console.log('err 2');
                 return true;
             }
-            console.log('err 3');
             return false;
         }
         if (compCard.cardNum == 9 || compCard.cardNum == 1){
-            console.log('err 4');
             return true;
         }
         if (compCard.cardNum == 2){
-            console.log('err 5');
-            return this.addIsValid(cardIndex-1);
+            let cardIndex = this.topCardSet.indexOf(card);
+            if (cardIndex === -1 || cardIndex === 0){
+                let newIndex = this.cards.indexOf(card);
+                if (newIndex === 0){
+                    return true;
+                }
+                return this.addIsValid(this.cards[newIndex]);
+            }
+            return this.addIsValid(this.topCardSet[cardIndex]);
         }
-
         if (compCard.cardNum == 0){
             return false;
         }
-
-
         if (card.cardNum == 0){
-            console.log('err 6');
             return true;
         } else {
-            console.log('err 7');
             return card.cardNum >= compCard.cardNum;
         }
     }

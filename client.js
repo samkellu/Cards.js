@@ -70,7 +70,7 @@ sock.onmessage = (m) => {
         case "startTurn":
             
             // add play button and notify player it is their turn
-            hand.makePlayButton();
+            hand.makePlayButton(playPile);
             setInstructionText("It's your turn.");
             console.log("turn started");
             break;
