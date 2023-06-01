@@ -22,6 +22,7 @@ const port = 8080;
 const router = new Router();
 const deck = new DecksBack();
 
+var turn = 0;
 var running = false;
 
 // Sends a message to al connected clients
@@ -125,7 +126,17 @@ router.get("/start_web_socket", async (ctx) => {
                     cardSuit: data.cardSuit,
                     cardNum: data.cardNum
                 }),);
-                // add to backend deck +++ TODO
+
+                sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
+                    event: "endTurn"
+                }),);
+
+                turn++;
+                sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
+                    event: "startTurn"
+                }),);
+
+                // add cards to backend deck +++ TODO
                 break;
 
             case "ready":
@@ -148,6 +159,10 @@ router.get("/start_web_socket", async (ctx) => {
                     broadcast_users();
                     broadcast(JSON.stringify({
                         event: "allReady"
+                    }),);
+
+                    sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
+                        event: "startTurn"
                     }),);
                 }
                 break;

@@ -8,7 +8,6 @@ export class CardBack {
     }
 }
 
-
 export class HandBack {
 
     constructor(){

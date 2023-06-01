@@ -7,6 +7,9 @@ const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
 const hand = new HandView(two, sock, username);
 const playPile = new PlayPileView(two);
+var instructionText = new Two.Text("", two.width/2, two.height-280, 'bold');
+instructionText.size = 20;
+two.add(instructionText);
 
 // Handles a message as it is received from the server's websocket
 sock.onmessage = (m) => {
@@ -26,11 +29,11 @@ sock.onmessage = (m) => {
             let button = document.getElementById("startButton");
             button.remove();
             document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: block; inset: 0px; position: fixed;");
-            startGame();
+            setInstructionText("Select three cards to use later.");
             break;
 
         case "allReady":
-            hand.makePlayButton();
+            setInstructionText("The game has started! Waiting for your turn...");
             break;
 
         // Another player has played a card -> add it to the top of the play pile
@@ -47,6 +50,7 @@ sock.onmessage = (m) => {
         // Sets the list of currently connected users
         case "setUserList":
             let userListStr = "";
+            console.log(data);
             for (const user of data.users) {
                 let readyString = `<span style="color: green; font-weight: bold;">READY</span>`;
                 if (user.ready == 0) {
@@ -57,18 +61,29 @@ sock.onmessage = (m) => {
                     readyString = "";
                 }
 
-                userListStr += `<div> ${user.name} ${readyString}</div>`;
+                userListStr += `<div> ${user.username} ${readyString}</div>`;
             }
 
             document.getElementById("users").innerHTML = userListStr;
             break;
+
+        case "startTurn":
+            
+            // add play button and notify player it is their turn
+            hand.makePlayButton();
+            setInstructionText("It's your turn.");
+            console.log("turn started");
+            break;
+
+        case "endTurn":
+
+            // Remove the play button and inform the user it isnt their turn
+            hand.removePlayButton();
+            setInstructionText("Waiting for your turn...");
+            console.log("turn ended");
+            break;
     }
 };
-
-// Handles the initialisation of the gamespace
-function startGame(){
-
-}
 
 // Adds a card to the player's hand to be displayed
 function addCard(cardSuit, cardNum) {
@@ -88,14 +103,19 @@ function addToPlayPile(cardSuit, cardNum) {
     two.update();
 }
 
+// Changes the instruction text 
+function setInstructionText(msg) {
+    
+    instructionText.value = msg;
+    two.update();
+}
 // Initialises essential page elements when opening the page
 window.onload = () => {
-
+    
     document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: none; inset: 0px; position: fixed;");
     document.getElementById("startButton").addEventListener("click", (e) => {
         sock.send(JSON.stringify({
             event: "startGame",
         }));
     });
-
 };

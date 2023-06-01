@@ -16,7 +16,7 @@ export class CardView {
 
         // Initialising card texture
         var image = new Image(60, 96);
-        image.src = "./cardSprites/"+["heart", "diamond", "club", "spade"][suitNum]+cardNum+".png";
+        image.src = "./cardSprites/" + ["heart", "diamond", "club", "spade"][suitNum] + cardNum + ".png";
         this.width = image.width;
         this.height = image.height;
         var texture = new Two.Texture(image);
@@ -163,20 +163,20 @@ export class HandView {
         if (this.ready == false){
             // Clicked card is in the faceUp array, and should be moved to the hand
             if (index == -1){
-
+                
                 if (this.faceUp.length == 3) {
-
+                    
                     this.readyBtn.destroy();
                 }
-
-                let index = this.faceUp.indexOf(card);
-                this.addToHand(card);
-                this.faceUp.splice(index, 1);
-
-            // Clicked card is in the hand and should be moved into the faceUp array
+                
+                card.isHoverable = true;
+                this.handArray.push(card);
+                this.faceUp.splice(this.faceUp.indexOf(card), 1);
+                
+                // Clicked card is in the hand and should be moved into the faceUp array
             } else {
                 if (this.faceUp.length < 3) {
-
+                    
                     this.faceUp.push(card);
                     this.handArray.splice(index, 1);
                 }
@@ -188,28 +188,25 @@ export class HandView {
 
                     this.readyBtn.group.renderer.elem.addEventListener('click', (e) => {
                         this.ready = true;
-                        this.readyBtn.destroy();
-
+                        
                         this.sock.send(JSON.stringify({
                             event: "ready",
                             player: this.username
                         }),)
+
+                        this.readyBtn.destroy();
+                        this.canvas.update();
                     });
-
-                    this.draw();
-                    this.canvas.update();
-                    return false;
                 }
-                return false;
             }
-
+            
         // Handles the general case of selecting a card to play
         } else {
             if (index == -1){
                 console.log("cant find card");
-                return false;
+                return;
             } else {
-
+                
                 var currCard = this.handArray[index];
                 // Adds a card to the current list of cards to be played
                 if (this.currentSelection.length == 0 || card.cardNum == this.currentSelection[0].cardNum) {
@@ -228,7 +225,8 @@ export class HandView {
             }
         }
 
-        return true;
+        this.draw();
+        this.canvas.update();
     }
 
     // Draws each of the different sets of cards in their required locations
