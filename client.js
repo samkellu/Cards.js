@@ -1,5 +1,5 @@
 import {Two} from "./two.js";
-import {CardView, HandView, PlayPileView, Button} from "./viewClasses.js"
+import {CardView, HandView, PlayPileView, Button, CardTypes} from "./viewClasses.js"
 
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
@@ -88,8 +88,10 @@ sock.onmessage = (m) => {
 // Adds a card to the player's hand to be displayed
 function addCard(cardSuit, cardNum) {
 
-    let card = new CardView(cardSuit, cardNum, two);
+    let card = new CardView(cardSuit, cardNum, two, CardTypes.HAND);
 
+    hand.addListeners(card);
+    hand.numHand++;
     hand.addToHand(card);
     two.update();
     hand.draw();
@@ -98,7 +100,7 @@ function addCard(cardSuit, cardNum) {
 // Adds a card to the play pile to be displayed
 function addToPlayPile(cardSuit, cardNum) {
 
-    playPile.addCard(new CardView(cardSuit, cardNum, two));
+    playPile.addCard(new CardView(cardSuit, cardNum, two, CardTypes.PILE));
     playPile.draw();
     two.update();
 }
