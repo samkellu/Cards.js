@@ -73,7 +73,6 @@ function initGamestate() {
 // Creates a web socket between the server and a client accessed by username
 router.get("/start_web_socket", async (ctx) => {
 
-    
     const sock = await ctx.upgrade();
     const username = ctx.request.url.searchParams.get("username");
     

@@ -1,5 +1,11 @@
 import {Two} from "./two.js"
 
+export const CardTypes = {
+    FACEUP: 0,
+    FACEDOWN: 1,
+    HAND: 2
+};
+
 // A representation of a card and its data to be displayed in the frontend
 export class CardView {
     width;
@@ -8,11 +14,13 @@ export class CardView {
     suit;
     rect;
     sprite;
+    cardType;
 
-    constructor(suitNum, cardNum, canvas){
+    constructor(suitNum, cardNum, canvas, cardType){
 
         this.cardNum = cardNum;
         this.suit = suitNum;
+        this.cardType = cardType;
 
         // Initialising card texture
         var image = new Image(60, 96);
@@ -43,13 +51,15 @@ export class HandView {
 
     canvas;
     faceDown;
-    faceUp;
     handArray;
     ready;
     readyBtn;
     playCardBtn;
     sock;
     username;
+    numFaceUp;
+    numHand;
+    instructionText;
 
     constructor(canvas, sock, username){
 
@@ -59,6 +69,9 @@ export class HandView {
         this.playCardBtn = null;
         this.sock = sock;
         this.username = username;
+        this.numFaceUp = 0;
+        this.numHand = 0;
+        this.instructionText = new TextBox(canvas.width/2, canvas.height-280, 20, canvas);
 
         // Initialises the facedown cards' textures
         this.faceDown = []
@@ -73,7 +86,6 @@ export class HandView {
         }
 
         this.handArray = [];
-        this.faceUp = [];
         this.currentSelection = [];
 
         // Absolute y positions for each set of displayed cards 
@@ -81,6 +93,11 @@ export class HandView {
         this.faceUpYPos = this.canvas.height - 200;
         this.faceDownYPos = this.canvas.height - 210;
         this.currentSelectionYPos = this.canvas.height - 200;
+    }
+
+    // Updates the instruction text's message
+    setInstructionText(msg) {
+        this.instructionText.setText(msg);
     }
 
     // Adds a generic hover and click listener to a card
@@ -115,16 +132,15 @@ export class HandView {
     // Adds a card to the hand array, allowing them to be played by the user
     addToHand(card) {
 
-        this.addListeners(card);
-
-        // Insers the card into the hand array in increasing order of card number
+        // Inserts the card into the hand array in increasing order of card number
+        card.isHoverable = true;
         for (let i = 0; i < this.handArray.length; i++) {
             if (this.handArray[i].cardNum >= card.cardNum) {
                 this.handArray.splice(i, 0, card);
+                this.draw();
                 return;
             }
         }
-        card.isHoverable = true;
         this.handArray.push(card);
         this.draw();
     }
@@ -143,6 +159,8 @@ export class HandView {
                     this.currentSelection[i].isHoverable = true;
                     this.handArray.push(this.currentSelection[i]);
                 }
+                // TODO - Add a case for when you have no valid plays possible
+                this.setInstructionText("Invalid play... Try again");
             } else {
                 // Valid play
                 for (let i = 0; i < this.currentSelection.length; i++) {
@@ -157,6 +175,7 @@ export class HandView {
                 }
             }
             this.currentSelection = [];
+            this.draw();
             this.canvas.update();
         });
     }
@@ -165,34 +184,97 @@ export class HandView {
         this.playCardBtn.destroy();
     }
 
+    // Adds a selected card to the current selection
+    addToSelection(card) {
+
+        if (this.currentSelection.includes(card)) {
+            return;
+        }
+
+        if (this.currentSelection.length != 0 && card.cardNum != this.currentSelection[0].cardNum) {
+            console.log("emptying");
+            this.emptySelection();
+        }
+
+        switch (card.cardType) {
+            case CardTypes.HAND:
+                card.isHoverable = false;
+                this.numHand--;
+                break;
+                
+            case CardTypes.FACEUP:
+                if (this.numHand != 0) {
+                    return;
+                }
+                this.numFaceUp--;
+                break;
+        }
+        this.handArray.splice(this.handArray.indexOf(card), 1);
+        this.currentSelection.push(card);
+        this.draw();
+    }
+
+    // Returns an individual card from the selection to the player's hand
+    removeFromSelection(card) {
+        
+        let index = this.currentSelection.indexOf(card);
+
+        if (index == -1) {
+            return;
+        }
+
+        card.cardType = CardTypes.HAND;
+        card.isHoverable = true;
+        this.addToHand(card);
+        this.currentSelection.splice(index, 1);
+        this.numHand++;
+    }
+
+    // Removes all cards from the current selection and adds them back to the player's hand
+    emptySelection() {
+
+        for (let i = 0; i < this.currentSelection.length; i++) {
+            let card = this.currentSelection[i];
+            switch (card.cardType) {
+                case CardTypes.HAND:
+                    this.numHand++;
+                    card.isHoverable = true;
+                    break;
+                    
+                case CardTypes.FACEUP:
+                    this.numFaceUp++;
+                    break;
+            }
+            this.addToHand(card);
+        }
+        this.currentSelection = [];
+        this.draw();
+    }
+
     // Handles the different behaviours of cards when clicked 
     handleClick(card){
-
-        let index = this.handArray.indexOf(card);
 
         // Handles the players initial choice of three face up cards
         if (this.ready == false){
             // Clicked card is in the faceUp array, and should be moved to the hand
-            if (index == -1){
-                
-                if (this.faceUp.length == 3) {
-                    
+            if (card.cardType == CardTypes.FACEUP) {
+                if (this.numFaceUp == 3) {
                     this.readyBtn.destroy();
                 }
                 
+                this.numFaceUp--;
                 card.isHoverable = true;
-                this.handArray.push(card);
-                this.faceUp.splice(this.faceUp.indexOf(card), 1);
+                card.cardType = CardTypes.HAND;
                 
-                // Clicked card is in the hand and should be moved into the faceUp array
+            // Clicked card is in the hand and should be moved into the faceUp array
             } else {
-                if (this.faceUp.length < 3) {
+                if (this.numFaceUp < 3) {
                     
-                    this.faceUp.push(card);
-                    this.handArray.splice(index, 1);
+                    this.numFaceUp++;
+                    card.cardType = CardTypes.FACEUP;
                 }
 
-                if (this.faceUp.length == 3){
+                if (this.numFaceUp == 3){
                     
                     // Allows the player to ready up when theyve selected their cards
                     this.readyBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "Ready", this.canvas);
@@ -213,26 +295,27 @@ export class HandView {
             
         // Handles the general case of selecting a card to play
         } else {
-            if (index == -1){
-                console.log("cant find card");
-                return;
+
+            
+            if (this.currentSelection.indexOf(card) != -1) {
+                // Removes a card from the current selection
+                this.removeFromSelection(card);
             } else {
-                
-                var currCard = this.handArray[index];
                 // Adds a card to the current list of cards to be played
-                if (this.currentSelection.length == 0 || card.cardNum == this.currentSelection[0].cardNum) {
-                    // Adds the new card to the selection if it is of the same type as those in the current selection
-                    currCard.isHoverable = false;
-                    this.currentSelection.push(currCard);
-                } else  {
-                    // Adds all cards in the selection back to your hand
-                    for (let i = 0; i < this.currentSelection.length; i++) {
-                        this.currentSelection[i].isHoverable = true;
-                        this.handArray.push(this.currentSelection[i]);
-                    }
-                    this.currentSelection = [currCard];
+                this.addToSelection(card);
+            }
+            
+            if (this.numHand == 0) {
+                for (let i = 0; i < this.handArray.length; i++) {
+                    this.handArray[i].isHoverable = true;
                 }
-                this.handArray.splice(index, 1);    
+            } else {
+                for (let i = 0; i < this.handArray.length; i++) {
+                    let currCard = this.handArray[i];
+                    if (currCard.cardType == CardTypes.FACEUP) {
+                        currCard.isHoverable = false;
+                    }
+                }
             }
         }
 
@@ -248,16 +331,21 @@ export class HandView {
             for (let i = 0; i < this.faceDown.length; i++){
                 this.faceDown[i].translation.set(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.faceDownYPos);
             }
-    
-            // Draw all face up cards
-            for (let i = 0; i < this.faceUp.length; i++){
-                this.faceUp[i].draw(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.faceUpYPos);
-            }
         }
 
+        let countHand = 0; 
+        let countFaceUp = 0;
         // Draw all cards in the player's hand
         for (let i = 0; i < this.handArray.length; i++){
-            this.handArray[i].draw(this.canvas.width/2 - (this.handArray.length*100/2) + i*100, this.handArrayYPos);
+            switch (this.handArray[i].cardType) {
+                case CardTypes.HAND:
+                    this.handArray[i].draw(this.canvas.width/2 - (this.numHand*100/2) + countHand++*100, this.handArrayYPos);
+                    break;
+
+                case CardTypes.FACEUP:
+                    this.handArray[i].draw(this.canvas.width/2 - (300/2) + countFaceUp++*100, this.faceUpYPos);
+                    break;
+            }
         }
 
         // Draws the selected cards to be played
@@ -371,5 +459,21 @@ export class Button {
 
     destroy() {
         this.group.remove();
+    }
+}
+
+export class TextBox {
+
+    constructor(x, y, fontSize, canvas) {
+        this.canvas = canvas
+        this.text = new Two.Text("", x, y, 'bold');
+        this.text.size = fontSize;
+        this.text.value = "";
+        canvas.add(this.text);
+    }
+
+    setText(msg) {
+        this.text.value = msg;
+        this.canvas.update();
     }
 }
