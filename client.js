@@ -1,5 +1,5 @@
 import {Two} from "./two.js";
-import {CardView, HandView, PlayPileView, Button, CardTypes} from "./viewClasses.js"
+import {CardView, HandView, PlayPileView, Button, CardTypes, TextBox} from "./viewClasses.js"
 
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
@@ -7,13 +7,11 @@ const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
 const hand = new HandView(two, sock, username);
 const playPile = new PlayPileView(two);
-var instructionText = new Two.Text("", two.width/2, two.height-280, 'bold');
-instructionText.size = 20;
-two.add(instructionText);
 
 // Handles a message as it is received from the server's websocket
 sock.onmessage = (m) => {
 
+    console.log(m);
     const data = JSON.parse(m.data);
     switch (data.event) {
 
@@ -29,11 +27,11 @@ sock.onmessage = (m) => {
             let button = document.getElementById("startButton");
             button.remove();
             document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: block; inset: 0px; position: fixed;");
-            setInstructionText("Select three cards to use later.");
+            hand.setInstructionText("Select three cards to use later.");
             break;
 
         case "allReady":
-            setInstructionText("The game has started! Waiting for your turn...");
+            hand.setInstructionText("The game has started! Waiting for your turn...");
             break;
 
         // Another player has played a card -> add it to the top of the play pile
@@ -71,7 +69,7 @@ sock.onmessage = (m) => {
             
             // add play button and notify player it is their turn
             hand.makePlayButton(playPile);
-            setInstructionText("It's your turn.");
+            hand.setInstructionText("It's your turn.");
             console.log("turn started");
             break;
 
@@ -79,7 +77,7 @@ sock.onmessage = (m) => {
 
             // Remove the play button and inform the user it isnt their turn
             hand.removePlayButton();
-            setInstructionText("Waiting for your turn...");
+            hand.setInstructionText("Waiting for your turn...");
             console.log("turn ended");
             break;
     }
@@ -105,12 +103,6 @@ function addToPlayPile(cardSuit, cardNum) {
     two.update();
 }
 
-// Changes the instruction text 
-function setInstructionText(msg) {
-    
-    instructionText.value = msg;
-    two.update();
-}
 // Initialises essential page elements when opening the page
 window.onload = () => {
     

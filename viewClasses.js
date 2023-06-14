@@ -59,6 +59,7 @@ export class HandView {
     username;
     numFaceUp;
     numHand;
+    instructionText;
 
     constructor(canvas, sock, username){
 
@@ -70,6 +71,7 @@ export class HandView {
         this.username = username;
         this.numFaceUp = 0;
         this.numHand = 0;
+        this.instructionText = new TextBox(canvas.width/2, canvas.height-280, 20, canvas);
 
         // Initialises the facedown cards' textures
         this.faceDown = []
@@ -91,6 +93,11 @@ export class HandView {
         this.faceUpYPos = this.canvas.height - 200;
         this.faceDownYPos = this.canvas.height - 210;
         this.currentSelectionYPos = this.canvas.height - 200;
+    }
+
+    // Updates the instruction text's message
+    setInstructionText(msg) {
+        this.instructionText.setText(msg);
     }
 
     // Adds a generic hover and click listener to a card
@@ -152,6 +159,8 @@ export class HandView {
                     this.currentSelection[i].isHoverable = true;
                     this.handArray.push(this.currentSelection[i]);
                 }
+                // TODO - Add a case for when you have no valid plays possible
+                this.setInstructionText("Invalid play... Try again");
             } else {
                 // Valid play
                 for (let i = 0; i < this.currentSelection.length; i++) {
@@ -175,6 +184,7 @@ export class HandView {
         this.playCardBtn.destroy();
     }
 
+    // Adds a selected card to the current selection
     addToSelection(card) {
 
         if (this.currentSelection.includes(card)) {
@@ -204,12 +214,27 @@ export class HandView {
         this.draw();
     }
 
-    // TODO
-    // removeFromSelection(card) {}
+    // Returns an individual card from the selection to the player's hand
+    removeFromSelection(card) {
+        
+        let index = this.currentSelection.indexOf(card);
 
+        if (index == -1) {
+            return;
+        }
+
+        card.cardType = CardTypes.HAND;
+        card.isHoverable = true;
+        this.addToHand(card);
+        this.currentSelection.splice(index, 1);
+        this.numHand++;
+    }
+
+    // Removes all cards from the current selection and adds them back to the player's hand
     emptySelection() {
+
         for (let i = 0; i < this.currentSelection.length; i++) {
-            let card = this.handArray[i];
+            let card = this.currentSelection[i];
             switch (card.cardType) {
                 case CardTypes.HAND:
                     this.numHand++;
@@ -228,11 +253,6 @@ export class HandView {
 
     // Handles the different behaviours of cards when clicked 
     handleClick(card){
-
-        let index = this.handArray.indexOf(card);
-        if (index == -1){
-            console.log("error, could not find card.");
-        }
 
         // Handles the players initial choice of three face up cards
         if (this.ready == false){
@@ -275,9 +295,15 @@ export class HandView {
             
         // Handles the general case of selecting a card to play
         } else {
-                
-            // Adds a card to the current list of cards to be played
-            this.addToSelection(card);
+
+            
+            if (this.currentSelection.indexOf(card) != -1) {
+                // Removes a card from the current selection
+                this.removeFromSelection(card);
+            } else {
+                // Adds a card to the current list of cards to be played
+                this.addToSelection(card);
+            }
             
             if (this.numHand == 0) {
                 for (let i = 0; i < this.handArray.length; i++) {
@@ -433,5 +459,21 @@ export class Button {
 
     destroy() {
         this.group.remove();
+    }
+}
+
+export class TextBox {
+
+    constructor(x, y, fontSize, canvas) {
+        this.canvas = canvas
+        this.text = new Two.Text("", x, y, 'bold');
+        this.text.size = fontSize;
+        this.text.value = "";
+        canvas.add(this.text);
+    }
+
+    setText(msg) {
+        this.text.value = msg;
+        this.canvas.update();
     }
 }
