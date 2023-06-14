@@ -47,30 +47,11 @@ export class CardView {
 
 // A visual representation of the player's hand, including the face down/up cards and 
 // the cards to be played
-export class HandView {
+export class GameView {
 
-    canvas;
-    faceDown;
-    handArray;
-    ready;
-    readyBtn;
-    playCardBtn;
-    sock;
-    username;
-    numFaceUp;
-    numHand;
-    instructionText;
-
-    constructor(canvas, sock, username){
+    constructor(canvas){
 
         this.canvas = canvas;
-        this.ready = false;
-        this.readyBtn = null;
-        this.playCardBtn = null;
-        this.sock = sock;
-        this.username = username;
-        this.numFaceUp = 0;
-        this.numHand = 0;
         this.instructionText = new TextBox(canvas.width/2, canvas.height-280, 20, canvas);
 
         // Initialises the facedown cards' textures
@@ -85,9 +66,6 @@ export class HandView {
             this.canvas.add(sprite);
         }
 
-        this.handArray = [];
-        this.currentSelection = [];
-
         // Absolute y positions for each set of displayed cards 
         this.handArrayYPos = this.canvas.height - 60;
         this.faceUpYPos = this.canvas.height - 200;
@@ -100,81 +78,13 @@ export class HandView {
         this.instructionText.setText(msg);
     }
 
-    // Adds a generic hover and click listener to a card
-    addListeners(card) {
-
-        this.canvas.update();
-
-        card.sprite.renderer.elem.addEventListener('click', (e) => {
-    
-            card.isHoverable = false;
-            let successfulHandle = this.handleClick(card);
-            this.draw();
-    
-        });
-    
-        // Moves the card when hovered over
-        card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
-    
-            if (card.isHoverable) {
-                card.draw(card.sprite.translation.x, card.sprite.translation.y - 30);
-                this.canvas.update();
-            }
-        });
-    
-        // Returns the card to its regular position after being hovered over
-        card.sprite.renderer.elem.addEventListener('mouseout', (e) => {
-            
-            this.draw();
-        });
-    }
-
-    // Adds a card to the hand array, allowing them to be played by the user
-    addToHand(card) {
-
-        // Inserts the card into the hand array in increasing order of card number
-        card.isHoverable = true;
-        for (let i = 0; i < this.handArray.length; i++) {
-            if (this.handArray[i].cardNum >= card.cardNum) {
-                this.handArray.splice(i, 0, card);
-                this.draw();
-                return;
-            }
-        }
-        this.handArray.push(card);
-        this.draw();
-    }
-
     // Makes the button that allows players to add cards to the playpile
-    makePlayButton(pile) {
+    makePlayButton(controller) {
         this.playCardBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "play", this.canvas);
 
         this.playCardBtn.group.renderer.elem.addEventListener('click', (e) => {
 
-            // Only allow the player to play the card if it is a valid play:
-            if (!pile.addIsValid(this.currentSelection[0])){
-                // Invalid play.
-                // Adds all cards in the selection back to your hand
-                for (let i = 0; i < this.currentSelection.length; i++) {
-                    this.currentSelection[i].isHoverable = true;
-                    this.handArray.push(this.currentSelection[i]);
-                }
-                // TODO - Add a case for when you have no valid plays possible
-                this.setInstructionText("Invalid play... Try again");
-            } else {
-                // Valid play
-                for (let i = 0; i < this.currentSelection.length; i++) {
-                    let card = this.currentSelection[i];
-                    this.sock.send( JSON.stringify({
-                        event: "addToPlayPile",
-                        cardSuit: card.suit,
-                        cardNum: card.cardNum,
-                    }),);
-    
-                    this.currentSelection[i].sprite.remove();
-                }
-            }
-            this.currentSelection = [];
+            controller.playCurrentSelection();
             this.draw();
             this.canvas.update();
         });
@@ -184,258 +94,60 @@ export class HandView {
         this.playCardBtn.destroy();
     }
 
-    // Adds a selected card to the current selection
-    addToSelection(card) {
+    makeReadyButton(controller) {
+        // Allows the player to ready up when theyve selected their cards
+        this.readyBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "Ready", this.canvas);
 
-        if (this.currentSelection.includes(card)) {
-            return;
-        }
+        this.readyBtn.group.renderer.elem.addEventListener('click', (e) => {
 
-        if (this.currentSelection.length != 0 && card.cardNum != this.currentSelection[0].cardNum) {
-            console.log("emptying");
-            this.emptySelection();
-        }
-
-        switch (card.cardType) {
-            case CardTypes.HAND:
-                card.isHoverable = false;
-                this.numHand--;
-                break;
-                
-            case CardTypes.FACEUP:
-                if (this.numHand != 0) {
-                    return;
-                }
-                this.numFaceUp--;
-                break;
-        }
-        this.handArray.splice(this.handArray.indexOf(card), 1);
-        this.currentSelection.push(card);
-        this.draw();
+            controller.setReady();
+            this.readyBtn.destroy();
+        });
     }
 
-    // Returns an individual card from the selection to the player's hand
-    removeFromSelection(card) {
-        
-        let index = this.currentSelection.indexOf(card);
-
-        if (index == -1) {
-            return;
-        }
-
-        card.cardType = CardTypes.HAND;
-        card.isHoverable = true;
-        this.addToHand(card);
-        this.currentSelection.splice(index, 1);
-        this.numHand++;
-    }
-
-    // Removes all cards from the current selection and adds them back to the player's hand
-    emptySelection() {
-
-        for (let i = 0; i < this.currentSelection.length; i++) {
-            let card = this.currentSelection[i];
-            switch (card.cardType) {
-                case CardTypes.HAND:
-                    this.numHand++;
-                    card.isHoverable = true;
-                    break;
-                    
-                case CardTypes.FACEUP:
-                    this.numFaceUp++;
-                    break;
-            }
-            this.addToHand(card);
-        }
-        this.currentSelection = [];
-        this.draw();
-    }
-
-    // Handles the different behaviours of cards when clicked 
-    handleClick(card){
-
-        // Handles the players initial choice of three face up cards
-        if (this.ready == false){
-            // Clicked card is in the faceUp array, and should be moved to the hand
-            if (card.cardType == CardTypes.FACEUP) {
-                if (this.numFaceUp == 3) {
-                    this.readyBtn.destroy();
-                }
-                
-                this.numFaceUp--;
-                card.isHoverable = true;
-                card.cardType = CardTypes.HAND;
-                
-            // Clicked card is in the hand and should be moved into the faceUp array
-            } else {
-                if (this.numFaceUp < 3) {
-                    
-                    this.numFaceUp++;
-                    card.cardType = CardTypes.FACEUP;
-                }
-
-                if (this.numFaceUp == 3){
-                    
-                    // Allows the player to ready up when theyve selected their cards
-                    this.readyBtn = new Button(this.canvas.width-200, this.canvas.height-200, 100, 20, "Ready", this.canvas);
-
-                    this.readyBtn.group.renderer.elem.addEventListener('click', (e) => {
-                        this.ready = true;
-                        
-                        this.sock.send(JSON.stringify({
-                            event: "ready",
-                            player: this.username
-                        }),)
-
-                        this.readyBtn.destroy();
-                        this.canvas.update();
-                    });
-                }
-            }
-            
-        // Handles the general case of selecting a card to play
-        } else {
-
-            
-            if (this.currentSelection.indexOf(card) != -1) {
-                // Removes a card from the current selection
-                this.removeFromSelection(card);
-            } else {
-                // Adds a card to the current list of cards to be played
-                this.addToSelection(card);
-            }
-            
-            if (this.numHand == 0) {
-                for (let i = 0; i < this.handArray.length; i++) {
-                    this.handArray[i].isHoverable = true;
-                }
-            } else {
-                for (let i = 0; i < this.handArray.length; i++) {
-                    let currCard = this.handArray[i];
-                    if (currCard.cardType == CardTypes.FACEUP) {
-                        currCard.isHoverable = false;
-                    }
-                }
-            }
-        }
-
-        this.draw();
-        this.canvas.update();
+    removeReadyButton() {
+        this.readyBtn.destroy();
     }
 
     // Draws each of the different sets of cards in their required locations
-    draw() {
-
-        if (!this.finishedChoosingStarting) {
-            // Draw all face down cards
+    draw(pileCards, handCards, faceUpCards, selectionCards) {
+        
+        // Draw all face down cards
+        if (this.faceDown != null) {
             for (let i = 0; i < this.faceDown.length; i++){
                 this.faceDown[i].translation.set(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.faceDownYPos);
             }
         }
-
-        let countHand = 0; 
-        let countFaceUp = 0;
+        
         // Draw all cards in the player's hand
-        for (let i = 0; i < this.handArray.length; i++){
-            switch (this.handArray[i].cardType) {
-                case CardTypes.HAND:
-                    this.handArray[i].draw(this.canvas.width/2 - (this.numHand*100/2) + countHand++*100, this.handArrayYPos);
-                    break;
-
-                case CardTypes.FACEUP:
-                    this.handArray[i].draw(this.canvas.width/2 - (300/2) + countFaceUp++*100, this.faceUpYPos);
-                    break;
+        if (handCards != null) {
+            for (let i = 0; i < handCards.length; i++) {
+                handCards[i].draw(this.canvas.width/2 - (handCards.length*100/2) + i*100, this.handArrayYPos);
             }
         }
-
+        
+        // Draw all faceup cards
+        if (faceUpCards != null) {
+            for (let i = 0; i < faceUpCards.length; i++) {
+               faceUpCards[i].draw(this.canvas.width/2 - 150 + i*100, this.faceUpYPos);
+            }
+        }
+        
         // Draws the selected cards to be played
-        for (let i = 0; i < this.currentSelection.length; i++) {
-            this.currentSelection[i].draw(100 + 100 * i, this.currentSelectionYPos);
+        if (selectionCards != null) {
+            for (let i = 0; i < selectionCards.length; i++) {
+                selectionCards[i].draw(100 + 100 * i, this.currentSelectionYPos);
+            }
+        }
+        
+        // Draws the top cards in the play pile
+        if (pileCards != null) {
+            for (let i = 0; i < pileCards.length; i++) {
+                pileCards[i].draw(this.canvas.width/3 - pileCards.length*20 + i*40, this.canvas.height/2);
+            }
         }
 
         this.canvas.update();
-    }
-}
-
-// A visual representation of the play pile, which stores the current stack of played cards
-export class PlayPileView {
-
-    constructor(canvas) {
-        this.cards = [];
-        this.topCardSet = [];
-        this.canvas = canvas;
-    }
-
-    // Checks if adding the given card to the play pile is valid
-    addIsValid(card){
-        if (this.topCardSet.length == 0){
-            return true;
-        }
-        if (card.cardNum == 9 || card.cardNum == 1 || card.cardNum == 2){
-            return true;
-        }
-        let compCard = this.topCardSet[0];
-        console.log("Comp card is: ", compCard.cardNum);
-
-        if (compCard.cardNum == 6){
-            if (card.cardNum <= 6 && card.cardNum != 0){
-                return true;
-            }
-            return false;
-        }
-        if (compCard.cardNum == 9 || compCard.cardNum == 1){
-            return true;
-        }
-        if (compCard.cardNum == 2){
-            let cardIndex = this.topCardSet.indexOf(card);
-            if (cardIndex === -1 || cardIndex === 0){
-                let newIndex = this.cards.indexOf(card);
-                if (newIndex === 0){
-                    return true;
-                }
-                return this.addIsValid(this.cards[newIndex]);
-            }
-            return this.addIsValid(this.topCardSet[cardIndex]);
-        }
-        if (compCard.cardNum == 0){
-            return false;
-        }
-        if (card.cardNum == 0){
-            return true;
-        } else {
-            return card.cardNum >= compCard.cardNum;
-        }
-    }
-
-    // Adds a card to the play pile, and updates the display of the top of the pile
-    addCard(card) {
-
-        // Ensure card to be added is valid.
-        if (this.addIsValid(card) == false){
-            return false;
-        }
-
-        if (this.topCardSet.length > 0) {
-            // If the card number matches the one at the top currently, adds it to 
-            // the top of the pile
-            if (this.topCardSet[0].cardNum == card.cardNum) {
-                this.topCardSet.push(card);
-                return true;
-            } 
-            // Destroys top of pile display and creates a new one for the card if not
-            this.topCardSet.forEach(function(pileCard) {
-                pileCard.destroy();
-            });
-        }
-        this.topCardSet = [card];
-        return true;
-    }
-
-    // Draws the top of the play pile
-    draw() {
-        for (let i = 0; i < this.topCardSet.length; i++) {
-            this.topCardSet[i].draw(this.canvas.width/3 - this.topCardSet.length*20 + i*40, this.canvas.height/2);
-        }
     }
 }
 
