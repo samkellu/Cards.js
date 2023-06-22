@@ -1,17 +1,17 @@
 import {Two} from "./two.js";
-import {CardView, HandView, PlayPileView, Button, CardTypes, TextBox} from "./viewClasses.js"
+import {CardView, GameView, CardTypes} from "./viewClasses.js";
+import {GameController} from "./GameController.js";
 
 const username = prompt("Enter your username: ");
 const sock = new WebSocket(`ws://localhost:8080/start_web_socket?username=${username}`,);
 const screen = document.getElementById("screen");
 const two = new Two( {fullscreen: true}).appendTo(screen);
-const hand = new HandView(two, sock, username);
-const playPile = new PlayPileView(two);
+const gameView = new GameView(two);
+const controller = new GameController(sock, username, gameView);
 
 // Handles a message as it is received from the server's websocket
 sock.onmessage = (m) => {
 
-    console.log(m);
     const data = JSON.parse(m.data);
     switch (data.event) {
 
@@ -27,11 +27,11 @@ sock.onmessage = (m) => {
             let button = document.getElementById("startButton");
             button.remove();
             document.getElementsByTagName("svg")[0].setAttribute("style", "overflow: hidden; display: block; inset: 0px; position: fixed;");
-            hand.setInstructionText("Select three cards to use later.");
+            gameView.setInstructionText("Select three cards to use later.");
             break;
 
         case "allReady":
-            hand.setInstructionText("The game has started! Waiting for your turn...");
+            gameView.setInstructionText("The game has started! Waiting for your turn...");
             break;
 
         // Another player has played a card -> add it to the top of the play pile
@@ -68,16 +68,16 @@ sock.onmessage = (m) => {
         case "startTurn":
             
             // add play button and notify player it is their turn
-            hand.makePlayButton(playPile);
-            hand.setInstructionText("It's your turn.");
+            gameView.makePlayButton(controller);
+            gameView.setInstructionText("It's your turn.");
             console.log("turn started");
             break;
 
         case "endTurn":
 
             // Remove the play button and inform the user it isnt their turn
-            hand.removePlayButton();
-            hand.setInstructionText("Waiting for your turn...");
+            gameView.removePlayButton();
+            gameView.setInstructionText("Waiting for your turn...");
             console.log("turn ended");
             break;
     }
@@ -87,20 +87,39 @@ sock.onmessage = (m) => {
 function addCard(cardSuit, cardNum) {
 
     let card = new CardView(cardSuit, cardNum, two, CardTypes.HAND);
-
-    hand.addListeners(card);
-    hand.numHand++;
-    hand.addToHand(card);
     two.update();
-    hand.draw();
+    
+    // Adds a generic hover and click listener to a card
+    card.sprite.renderer.elem.addEventListener('click', (e) => {
+    
+        card.isHoverable = false;
+        controller.handleClick(card);
+
+    });
+
+    // Moves the card when hovered over
+    card.sprite.renderer.elem.addEventListener('mouseover', (e) => {
+
+        if (card.isHoverable) {
+            card.draw(card.sprite.translation.x, card.sprite.translation.y - 30);
+            two.update();
+        }
+    });
+
+    // Returns the card to its regular position after being hovered over
+    card.sprite.renderer.elem.addEventListener('mouseout', (e) => {
+        
+        controller.draw();
+    });
+
+    controller.addToHand(card);
 }
 
 // Adds a card to the play pile to be displayed
 function addToPlayPile(cardSuit, cardNum) {
 
-    playPile.addCard(new CardView(cardSuit, cardNum, two, CardTypes.PILE));
-    playPile.draw();
-    two.update();
+    let card = new CardView(cardSuit, cardNum, two, CardTypes.PILE);
+    controller.addToPlayPile(card)
 }
 
 // Initialises essential page elements when opening the page
