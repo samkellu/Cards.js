@@ -40,9 +40,12 @@ sock.onmessage = (m) => {
             break;
 
         // Add the given card to the player's hand
-        case "addCard":
+        case "addCardHand":
             addCard(data.cardSuit, data.cardNum);
-            console.log("Added card", data.cardSuit, data.cardNum);
+            break;
+
+        case "addCardFaceDown":
+            controller.addToFaceDown(new CardView(data.cardSuit, data.cardNum, two, CardTypes.FACEDOWN));
             break;
         
         // Sets the list of currently connected users

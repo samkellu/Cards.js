@@ -1,5 +1,5 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
-import { CardBack, HandBack, DecksBack } from "./backendClasses.js";
+import { Card, Hand, Deck, GameState, PlayPile } from "./backendClasses.js";
 
 // Struct to represent a user and their information
 class User {
@@ -20,7 +20,7 @@ const users = new Map();
 const app = new Application();
 const port = 8080;
 const router = new Router();
-const deck = new DecksBack();
+const state = new GameState();
 
 var turn = 0;
 var running = false;
@@ -53,16 +53,21 @@ function broadcast_users() {
 
 // Initialises the backend gamestate, and draws cards from the deck for each player
 function initGamestate() {
-    for (const user of users.values()) {
-        user.hand = new HandBack();
 
-        // TODO should this draw more cards for the faceDown hand cards?
-        for (let i = 0; i < 5; i++) {
-            var card = deck.draw();
-            user.hand.addToHand(card);
+    for (let user of users.values()) {
 
+        let toAdd = state.initHand(user.name);
+        for (let card of toAdd.faceDown) {
             sendMessage(user, JSON.stringify({
-                event: "addCard",
+                event: "addCardFaceDown",
+                cardSuit: card.suit,
+                cardNum: card.num
+            }),);
+        }
+        
+        for (let card of toAdd.hand) {
+            sendMessage(user, JSON.stringify({
+                event: "addCardHand",
                 cardSuit: card.suit,
                 cardNum: card.num
             }),);

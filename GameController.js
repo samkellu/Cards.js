@@ -25,6 +25,11 @@ export class GameController {
         }),);
     }
 
+    addToFaceDown(card) {
+        this.faceDown.push(card);
+        this.draw();
+    }
+
     // Adds a card to the hand array, allowing them to be played by the user
     addToHand(card) {
 
@@ -196,8 +201,6 @@ export class GameController {
             
         // Handles the general case of selecting a card to play
         } else {
-
-            
             if (this.currentSelection.indexOf(card) != -1) {
                 // Removes a card from the current selection
                 this.removeFromSelection(card);
@@ -210,6 +213,7 @@ export class GameController {
         this.draw();
     }
 
+    // TODO move to serverside
     // Checks if adding the given card to the play pile is valid
     validateSelection(card){
 
@@ -255,6 +259,7 @@ export class GameController {
     // Draws each of the different sets of cards in their required locations
     draw() {
 
+        // Draws the play pile
         let topPileSet = [];
         for (let i = this.playPile.length - 1; i >= 0; i++) {
             if (i == this.playPile.length - 1 || this.playPile[i] == topPileSet[topPileSet.length - 1]) {
@@ -264,6 +269,7 @@ export class GameController {
             }
         }
 
-        this.gameView.draw(topPileSet, this.hand, this.faceUp, this.currentSelection);
+        // Draws the players hand and selected cards
+        this.gameView.draw(topPileSet, this.hand, this.faceUp, this.currentSelection, this.faceDown);
     }
 }

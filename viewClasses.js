@@ -24,14 +24,18 @@ export class CardView {
 
         // Initialising card texture
         var image = new Image(60, 96);
-        image.src = "./cardSprites/" + ["heart", "diamond", "club", "spade"][suitNum] + cardNum + ".png";
+
+        if (cardType == CardTypes.FACEDOWN) {
+            image.src = "./cardSprites/blank1.png";
+        } else {
+            image.src = "./cardSprites/" + ["heart", "diamond", "club", "spade"][suitNum] + cardNum + ".png";
+            this.isHoverable = true;
+        }
         this.width = image.width;
         this.height = image.height;
         var texture = new Two.Texture(image);
         this.sprite = new Two.Sprite(texture);
         canvas.add(this.sprite);
-
-        this.isHoverable = true;
     }
 
     // Draws the card at a given position
@@ -53,18 +57,6 @@ export class GameView {
 
         this.canvas = canvas;
         this.instructionText = new TextBox(canvas.width/2, canvas.height-280, 20, canvas);
-
-        // Initialises the facedown cards' textures
-        this.faceDown = []
-        for (let i = 0; i < 3; i++){
-
-            let image = new Image(60, 96);
-            image.src = "./cardSprites/blank1.png";
-            let texture = new Two.Texture(image)
-            let sprite = new Two.Sprite(texture);
-            this.faceDown.push(sprite);
-            this.canvas.add(sprite);
-        }
 
         // Absolute y positions for each set of displayed cards 
         this.handArrayYPos = this.canvas.height - 60;
@@ -110,12 +102,12 @@ export class GameView {
     }
 
     // Draws each of the different sets of cards in their required locations
-    draw(pileCards, handCards, faceUpCards, selectionCards) {
+    draw(pileCards, handCards, faceUpCards, selectionCards, faceDownCards) {
         
         // Draw all face down cards
-        if (this.faceDown != null) {
-            for (let i = 0; i < this.faceDown.length; i++){
-                this.faceDown[i].translation.set(this.canvas.width/2 - (this.faceDown.length*100/2) + i*100, this.faceDownYPos);
+        if (faceDownCards != null) {
+            for (let i = 0; i < faceDownCards.length; i++){
+                faceDownCards[i].draw(this.canvas.width/2 - (faceDownCards.length*100/2) + i*100, this.faceDownYPos);
             }
         }
         
