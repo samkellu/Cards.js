@@ -1,5 +1,6 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
-import { CardBack, HandBack, DecksBack } from "./backendClasses.js";
+import { GameState, Card } from "./backendClasses.js";
+import {Response} from "./responseTypes.js" 
 
 // Struct to represent a user and their information
 class User {
@@ -20,10 +21,19 @@ const users = new Map();
 const app = new Application();
 const port = 8080;
 const router = new Router();
-const deck = new DecksBack();
+const state = new GameState();
 
-var turn = 0;
 var running = false;
+
+// Gets a user by socket, or null if not
+function getUserBySocket(sock) {
+    for (let user of users.values()) {
+        if (user.sock == sock) {
+            return user;
+        }
+    }
+    return null;
+}
 
 // Sends a message to al connected clients
 function broadcast(msg) {
@@ -53,16 +63,21 @@ function broadcast_users() {
 
 // Initialises the backend gamestate, and draws cards from the deck for each player
 function initGamestate() {
-    for (const user of users.values()) {
-        user.hand = new HandBack();
 
-        // TODO should this draw more cards for the faceDown hand cards?
-        for (let i = 0; i < 5; i++) {
-            var card = deck.draw();
-            user.hand.addToHand(card);
+    for (let user of users.values()) {
 
+        let toAdd = state.initHand(user.name);
+        for (let card of toAdd.faceDown) {
             sendMessage(user, JSON.stringify({
-                event: "addCard",
+                event: "addCardFaceDown",
+                cardSuit: card.suit,
+                cardNum: card.num
+            }),);
+        }
+        
+        for (let card of toAdd.hand) {
+            sendMessage(user, JSON.stringify({
+                event: "addCardHand",
                 cardSuit: card.suit,
                 cardNum: card.num
             }),);
@@ -119,25 +134,6 @@ router.get("/start_web_socket", async (ctx) => {
                 }),);
                 break;
 
-            case "addToPlayPile":
-                broadcast(JSON.stringify({
-                    event: "addToPlayPile",
-                    cardSuit: data.cardSuit,
-                    cardNum: data.cardNum
-                }),);
-
-                sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
-                    event: "endTurn"
-                }),);
-
-                turn++;
-                sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
-                    event: "startTurn"
-                }),);
-
-                // add cards to backend deck +++ TODO
-                break;
-
             case "ready":
                 console.log("Player " + data.player + " is ready!");
                 users.get(data.player).ready = 1;
@@ -160,7 +156,48 @@ router.get("/start_web_socket", async (ctx) => {
                         event: "allReady"
                     }),);
 
-                    sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
+                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
+                        event: "startTurn"
+                    }),);
+                }
+                break;
+            
+            // Handles an attempt to play a selection of cards
+            case "playCards":
+
+                let user = getUserBySocket(sock);
+                if (user == null) {
+                    console.log("invalid user");
+                    return;
+                }
+
+                let cards = state.dictToCards(data.cards)
+                // validates and plays the selected cards
+                let result = state.playCards(user.name, cards);
+                
+                // sends the result of this attempt to the player
+                sendMessage(user, JSON.stringify({
+                    event: "playCardsResponse",
+                    response: result,
+                }));
+
+                // Updates the turn and playpile for all players if the play was successful
+                if (result == Response.VALID) {
+                    for (let card of cards) {
+
+                        broadcast(JSON.stringify({
+                            event: "addToPlayPile",
+                            cardSuit: card.suit,
+                            cardNum: card.num
+                        }),);
+                    }
+                    
+                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
+                        event: "endTurn"
+                    }),);
+                    
+                    let turn = state.incrementTurn();
+                    sendMessage(users.get([...users.keys()][turn]), JSON.stringify({
                         event: "startTurn"
                     }),);
                 }

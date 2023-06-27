@@ -30,6 +30,7 @@ sock.onmessage = (m) => {
             gameView.setInstructionText("Select three cards to use later.");
             break;
 
+        // When all players have been marked as ready
         case "allReady":
             gameView.setInstructionText("The game has started! Waiting for your turn...");
             break;
@@ -40,15 +41,17 @@ sock.onmessage = (m) => {
             break;
 
         // Add the given card to the player's hand
-        case "addCard":
+        case "addCardHand":
             addCard(data.cardSuit, data.cardNum);
-            console.log("Added card", data.cardSuit, data.cardNum);
+            break;
+
+        case "addCardFaceDown":
+            controller.addToFaceDown(new CardView(data.cardSuit, data.cardNum, two, CardTypes.FACEDOWN));
             break;
         
         // Sets the list of currently connected users
         case "setUserList":
             let userListStr = "";
-            console.log(data);
             for (const user of data.users) {
                 let readyString = `<span style="color: green; font-weight: bold;">READY</span>`;
                 if (user.ready == 0) {
@@ -65,6 +68,7 @@ sock.onmessage = (m) => {
             document.getElementById("users").innerHTML = userListStr;
             break;
 
+        // Begins the current player's turn, allowing them to play cards
         case "startTurn":
             
             // add play button and notify player it is their turn
@@ -73,12 +77,18 @@ sock.onmessage = (m) => {
             console.log("turn started");
             break;
 
+        // Ends the player's turn and removes relevant ui elements
         case "endTurn":
 
             // Remove the play button and inform the user it isnt their turn
             gameView.removePlayButton();
             gameView.setInstructionText("Waiting for your turn...");
             console.log("turn ended");
+            break;
+
+        // Handles the callback for the serverside card verification
+        case "playCardsResponse":
+            controller.handleValidateResponse(data.response);
             break;
     }
 };
