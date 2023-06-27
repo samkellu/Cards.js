@@ -1,6 +1,7 @@
 import {CardTypes} from "./viewClasses.js"
 import {Response} from "./responseTypes.js" 
 
+// Handles all events and view elements of the frontend
 export class GameController {
 
     constructor(sock, username, gameView){
@@ -17,6 +18,7 @@ export class GameController {
         this.playPile = [];
     }
 
+    // Sets the ready status of the player, informs the server of this change
     setReady() {
         this.ready = true;
             
@@ -48,23 +50,22 @@ export class GameController {
         this.draw();
     }
 
+    // Adds a card to the playpile to be displayed
     addToPlayPile(card) {
-
-        console.log(card.suit + " " + card.cardNum);
         card.isHoverable = false;
         this.playPile.push(card);
         this.draw();
     }
 
-    // Adds a selected card to the current selection
+    // Adds a given card to the current selection and verifies if it is valid, clears selection if not.
     addToSelection(card) {
 
-        console.log(card.suit + " " + card.cardNum + " " + card.cardType);
-
+        // ensures that the selected card isnt already in the selection
         if (this.currentSelection.includes(card)) {
             return;
         }
 
+        // Checks validity of taking the different types of cards, based on gamestate
         switch (card.cardType) {
             case CardTypes.HAND:
                 if (this.currentSelection.length != 0 && card.cardNum != this.currentSelection[0].cardNum) {
@@ -96,7 +97,7 @@ export class GameController {
         this.draw();
     }
 
-    // Returns an individual card from the selection to the player's hand
+    // Returns an individual card from the selection to the player's hand/faceup pile based on original location
     removeFromSelection(card) {
         
         let index = this.currentSelection.indexOf(card);
@@ -180,12 +181,15 @@ export class GameController {
         this.draw();
     }
 
+    // Requests the server to validate the player playing their current selection of cards
     makeValidateRequest() {
 
+        // Assured that an empty selection is invalid without server verification
         if (this.currentSelection.length == 0) {
-            this.handleValidateResponse(false);
+            this.handleValidateResponse(Response.INVALID);
         }
 
+        // Creates a dictionary representation of the selection to be sent to the server
         let cards = {};
         for (let card of this.currentSelection) {
             cards[card.suit] = card.cardNum;
@@ -197,6 +201,7 @@ export class GameController {
         }),);
     }
 
+    // Handles the various card validation responsed from the server
     handleValidateResponse(response) {
 
 
@@ -209,9 +214,8 @@ export class GameController {
 
         } else if (response == Response.VALID) {
 
-            // Valid play
+            // Removes sprites from the current selection, doesnt add them back to the player's hand
             for (let i = 0; i < this.currentSelection.length; i++) {
-
                 this.currentSelection[i].sprite.remove();
             }
             
@@ -220,7 +224,6 @@ export class GameController {
 
             // Adds all cards in the selection back to your hand
             this.emptySelection();
-            // TODO - Add a case for when you have no valid plays possible
             this.gameView.setInstructionText("Not your turn...");
         }
 
@@ -235,49 +238,6 @@ export class GameController {
         }
         this.currentSelection = [];
         this.draw();
-    }
-
-    // TODO move to serverside
-    // Checks if adding the given card to the play pile is valid
-    validateSelection(card){
-
-        if (this.playPile.length == 0){
-            return true;
-        }
-        if (card.cardNum == 9 || card.cardNum == 1 || card.cardNum == 2){
-            return true;
-        }
-        let compCard = this.playPile[this.playPile.length-1];
-        console.log("Comp card is: ", compCard.cardNum);
-
-        if (compCard.cardNum == 6){
-            if (card.cardNum <= 6 && card.cardNum != 0){
-                return true;
-            }
-            return false;
-        }
-        if (compCard.cardNum == 9 || compCard.cardNum == 1){
-            return true;
-        }
-        if (compCard.cardNum == 2){
-            let cardIndex = this.playPile.indexOf(card);
-            if (cardIndex === -1 || cardIndex === 0){
-                let newIndex = this.playPile.indexOf(card);
-                if (newIndex === 0){
-                    return true;
-                }
-                return this.validateSelection(this.playPile[newIndex]);
-            }
-            return this.validateSelection(this.topCardSet[cardIndex]);
-        }
-        if (compCard.cardNum == 0){
-            return false;
-        }
-        if (card.cardNum == 0){
-            return true;
-        } else {
-            return card.cardNum >= compCard.cardNum;
-        }
     }
 
     // Draws each of the different sets of cards in their required locations

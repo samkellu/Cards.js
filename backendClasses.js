@@ -72,11 +72,13 @@ export class GameState {
         this.playPile = new PlayPile(); 
     }
 
+    // Recalculates the next turn value
     incrementTurn() {
         this.turn = (this.turn + 1) % this.hands.length;
         return this.turn;
     }
     
+    // Initialises a specific player's hand with 3 facedown and 5 faceup cards
     initHand(playerName) {
 
         if (playerName == null) {
@@ -85,12 +87,14 @@ export class GameState {
         
         let cards = {faceDown: [], hand: []};
         let hand = new Hand(playerName);
+        // facedown cards
         for (let j = 0; j < 3; j++) {
             let chosen = this.deck.draw();
             hand.addToFaceDown();
             cards.faceDown.push(chosen);
         }
         
+        // faceup cards
         for (let j = 0; j < 5; j++) {
             let chosen = this.deck.draw();
             hand.addToHand(chosen);
@@ -101,18 +105,18 @@ export class GameState {
         return cards;
     }
 
+    // Converts a dictionary of the form {suit, num} into a list of cards
     dictToCards(cardsDict) {
         
         let ret = [];
-        console.log(cardsDict);
         for (let key of Object.keys(cardsDict)) {
             ret.push(this.deck.allCards[key * 13 + cardsDict[key]]);
-            console.log(ret[ret.length -1].suit + " " + ret[ret.length -1].num);
         }
 
         return ret;
     }
 
+    // Checks if a set of cards is currently playable and plays them if valid. Gives appropriate responses to be interpretted by the client
     playCards(playerName, cards) {
 
         if (this.hands[this.turn].name != playerName) {
@@ -141,13 +145,15 @@ export class GameState {
     }
 }
 
+// Represents the play pile, containing all the cards that have been played since the last pick up
 class PlayPile {
 
     contructor() {
         this.pile = [];
     }
 
-    addToPile(cards, sock) {
+    // Adds a card to the top of the play pile
+    addToPile(cards) {
 
         this.pile = this.pile == null ? [] : this.pile;
         for (let card of cards) {
@@ -155,10 +161,12 @@ class PlayPile {
         }
     }
 
+    // Returns the play pile
     getPile() {
         return this.pile;
     }
 
+    // Checks whether playing a card is valid based on the current state of the pile
     validatePlay(card) {
 
         if (this.pile == null || this.pile.length == 0){
@@ -200,17 +208,20 @@ class PlayPile {
         }
     }
 
+    // Empties the pile
     emptyPile() {
         this.pile = [];
     }
 }
 
+// Represents the deck, containing all the cards that have not been played yet
 export class Deck {
     
     constructor() {
 
         this.allCards = [];
         this.drawDeck = [];
+        // Creates card objects for the deck
         for (let suit = 0; suit < 4; suit++) {
             for (let value = 0; value < 13; value++) {
                 let card = new Card(suit, value);
@@ -221,6 +232,7 @@ export class Deck {
         this.shuffleDeck();
     }
 
+    // Shuffles the entire deck
     shuffleDeck(array) {
         for (var i = this.drawDeck.length - 1; i > 0; i--) {
             var j = Math.floor(Math.random() * (i + 1));
@@ -230,6 +242,7 @@ export class Deck {
         }
     }
 
+    // Draws one card from the deck
     draw() {
         return this.drawDeck.pop();
     }

@@ -162,6 +162,7 @@ router.get("/start_web_socket", async (ctx) => {
                 }
                 break;
             
+            // Handles an attempt to play a selection of cards
             case "playCards":
 
                 let user = getUserBySocket(sock);
@@ -171,13 +172,16 @@ router.get("/start_web_socket", async (ctx) => {
                 }
 
                 let cards = state.dictToCards(data.cards)
+                // validates and plays the selected cards
                 let result = state.playCards(user.name, cards);
                 
+                // sends the result of this attempt to the player
                 sendMessage(user, JSON.stringify({
                     event: "playCardsResponse",
                     response: result,
                 }));
 
+                // Updates the turn and playpile for all players if the play was successful
                 if (result == Response.VALID) {
                     for (let card of cards) {
 
