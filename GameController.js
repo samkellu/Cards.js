@@ -1,4 +1,5 @@
 import {CardTypes} from "./viewClasses.js"
+import {Response} from "./responseTypes.js" 
 
 export class GameController {
 
@@ -49,50 +50,16 @@ export class GameController {
 
     addToPlayPile(card) {
 
+        console.log(card.suit + " " + card.cardNum);
         card.isHoverable = false;
         this.playPile.push(card);
-        this.draw();
-    }
-
-    playCurrentSelection() {
-        // Only allow the player to play the card if it is a valid play:
-        if (!this.validateSelection(this.currentSelection[0])){
-            // Invalid play.
-            // Adds all cards in the selection back to your hand
-            this.emptySelection();
-            // TODO - Add a case for when you have no valid plays possible
-            this.gameView.setInstructionText("Invalid play... Try again");
-        } else {
-            // Valid play
-            for (let i = 0; i < this.currentSelection.length; i++) {
-                let card = this.currentSelection[i];
-                this.sock.send( JSON.stringify({
-                    event: "addToPlayPile",
-                    cardSuit: card.suit,
-                    cardNum: card.cardNum,
-                }),);
-
-                this.currentSelection[i].sprite.remove();
-            }
-        }
-
-        if (this.hand.length == 0) {
-            for (let card of this.faceUp) {
-                card.isHoverable = true;
-            }
-        } else {
-            for (let card of this.faceUp) {
-                card.isHoverable = false;
-            }
-        }
-        this.currentSelection = [];
         this.draw();
     }
 
     // Adds a selected card to the current selection
     addToSelection(card) {
 
-        console.log(card.cardSuit + " " + card.cardNum + " " + card.cardType);
+        console.log(card.suit + " " + card.cardNum + " " + card.cardType);
 
         if (this.currentSelection.includes(card)) {
             return;
@@ -210,6 +177,63 @@ export class GameController {
             }
         }
 
+        this.draw();
+    }
+
+    makeValidateRequest() {
+
+        if (this.currentSelection.length == 0) {
+            this.handleValidateResponse(false);
+        }
+
+        let cards = {};
+        for (let card of this.currentSelection) {
+            cards[card.suit] = card.cardNum;
+        }
+
+        this.sock.send(JSON.stringify({
+            event: "playCards",
+            cards: cards,
+        }),);
+    }
+
+    handleValidateResponse(response) {
+
+
+        if (response == Response.INVALID) {
+
+            // Adds all cards in the selection back to your hand
+            this.emptySelection();
+            // TODO - Add a case for when you have no valid plays possible
+            this.gameView.setInstructionText("Invalid play... Try again");
+
+        } else if (response == Response.VALID) {
+
+            // Valid play
+            for (let i = 0; i < this.currentSelection.length; i++) {
+
+                this.currentSelection[i].sprite.remove();
+            }
+            
+        // Shouldnt be reachable, as the button only exists when it is the player's turn, added due to desync errors
+        } else if (response == Response.WRONG_TURN) {
+
+            // Adds all cards in the selection back to your hand
+            this.emptySelection();
+            // TODO - Add a case for when you have no valid plays possible
+            this.gameView.setInstructionText("Not your turn...");
+        }
+
+        if (this.hand.length == 0) {
+            for (let card of this.faceUp) {
+                card.isHoverable = true;
+            }
+        } else {
+            for (let card of this.faceUp) {
+                card.isHoverable = false;
+            }
+        }
+        this.currentSelection = [];
         this.draw();
     }
 

@@ -1,8 +1,4 @@
-export const Response = {
-    INVALID: 0,
-    WRONG_TURN: 1,
-    VALID: 2,
-};
+import {Response} from "./responseTypes.js" 
 
 export class Card {
     value;
@@ -14,7 +10,7 @@ export class Card {
     }
 }
 
-export class Hand {
+class Hand {
 
     constructor(name){
         this.name = name;
@@ -75,6 +71,11 @@ export class GameState {
         this.deck = new Deck();
         this.playPile = new PlayPile(); 
     }
+
+    incrementTurn() {
+        this.turn = (this.turn + 1) % this.hands.length;
+        return this.turn;
+    }
     
     initHand(playerName) {
 
@@ -100,15 +101,27 @@ export class GameState {
         return cards;
     }
 
-    playCards(player, cards) {
+    dictToCards(cardsDict) {
+        
+        let ret = [];
+        console.log(cardsDict);
+        for (let key of Object.keys(cardsDict)) {
+            ret.push(this.deck.allCards[key * 13 + cardsDict[key]]);
+            console.log(ret[ret.length -1].suit + " " + ret[ret.length -1].num);
+        }
 
-        if (this.hands[turn].name != player) {
+        return ret;
+    }
+
+    playCards(playerName, cards) {
+
+        if (this.hands[this.turn].name != playerName) {
             return Response.WRONG_TURN;
         }
 
         // TODO checks for facedown cards to ensure only one is played at the same time? not too sure abt the rules of the game tbh
         for (let card of cards) {
-            if (!this.hand.isPlayable(card)) {
+            if (!this.hands[this.turn].isPlayable(card)) {
                 return Response.INVALID;
             }
         }
@@ -120,20 +133,23 @@ export class GameState {
         }
 
         for (let card of cards) {
-            this.hand.removeCard;
+            this.hands[this.turn].removeCard(card);
         }
 
+        this.playPile.addToPile(cards);
         return Response.VALID;
     }
 }
 
-export class PlayPile {
+class PlayPile {
 
     contructor() {
         this.pile = [];
     }
 
-    addToPile(cards) {
+    addToPile(cards, sock) {
+
+        this.pile = this.pile == null ? [] : this.pile;
         for (let card of cards) {
             this.pile.push(card);
         }
@@ -145,7 +161,7 @@ export class PlayPile {
 
     validatePlay(card) {
 
-        if (this.pile.length == 0){
+        if (this.pile == null || this.pile.length == 0){
             return true;
         }
         if (card.num == 9 || card.num == 1 || card.num == 2){
@@ -193,10 +209,13 @@ export class Deck {
     
     constructor() {
 
+        this.allCards = [];
         this.drawDeck = [];
         for (let suit = 0; suit < 4; suit++) {
             for (let value = 0; value < 13; value++) {
-                this.drawDeck.push(new Card(suit, value));
+                let card = new Card(suit, value);
+                this.drawDeck.push(card);
+                this.allCards.push(card);
             }
         }
         this.shuffleDeck();

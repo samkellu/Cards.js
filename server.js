@@ -1,5 +1,6 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
-import { Card, Hand, Deck, GameState, PlayPile } from "./backendClasses.js";
+import { GameState, Card } from "./backendClasses.js";
+import {Response} from "./responseTypes.js" 
 
 // Struct to represent a user and their information
 class User {
@@ -22,8 +23,17 @@ const port = 8080;
 const router = new Router();
 const state = new GameState();
 
-var turn = 0;
 var running = false;
+
+// Gets a user by socket, or null if not
+function getUserBySocket(sock) {
+    for (let user of users.values()) {
+        if (user.sock == sock) {
+            return user;
+        }
+    }
+    return null;
+}
 
 // Sends a message to al connected clients
 function broadcast(msg) {
@@ -124,25 +134,6 @@ router.get("/start_web_socket", async (ctx) => {
                 }),);
                 break;
 
-            case "addToPlayPile":
-                broadcast(JSON.stringify({
-                    event: "addToPlayPile",
-                    cardSuit: data.cardSuit,
-                    cardNum: data.cardNum
-                }),);
-
-                sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
-                    event: "endTurn"
-                }),);
-
-                turn++;
-                sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
-                    event: "startTurn"
-                }),);
-
-                // add cards to backend deck +++ TODO
-                break;
-
             case "ready":
                 console.log("Player " + data.player + " is ready!");
                 users.get(data.player).ready = 1;
@@ -165,7 +156,44 @@ router.get("/start_web_socket", async (ctx) => {
                         event: "allReady"
                     }),);
 
-                    sendMessage(users.get([...users.keys()][turn % users.size]), JSON.stringify({
+                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
+                        event: "startTurn"
+                    }),);
+                }
+                break;
+            
+            case "playCards":
+
+                let user = getUserBySocket(sock);
+                if (user == null) {
+                    console.log("invalid user");
+                    return;
+                }
+
+                let cards = state.dictToCards(data.cards)
+                let result = state.playCards(user.name, cards);
+                
+                sendMessage(user, JSON.stringify({
+                    event: "playCardsResponse",
+                    response: result,
+                }));
+
+                if (result == Response.VALID) {
+                    for (let card of cards) {
+
+                        broadcast(JSON.stringify({
+                            event: "addToPlayPile",
+                            cardSuit: card.suit,
+                            cardNum: card.num
+                        }),);
+                    }
+                    
+                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
+                        event: "endTurn"
+                    }),);
+                    
+                    let turn = state.incrementTurn();
+                    sendMessage(users.get([...users.keys()][turn]), JSON.stringify({
                         event: "startTurn"
                     }),);
                 }

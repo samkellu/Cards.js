@@ -76,9 +76,7 @@ export class GameView {
 
         this.playCardBtn.group.renderer.elem.addEventListener('click', (e) => {
 
-            controller.playCurrentSelection();
-            this.draw();
-            this.canvas.update();
+            controller.makeValidateRequest();
         });
     }
 

@@ -51,7 +51,6 @@ sock.onmessage = (m) => {
         // Sets the list of currently connected users
         case "setUserList":
             let userListStr = "";
-            console.log(data);
             for (const user of data.users) {
                 let readyString = `<span style="color: green; font-weight: bold;">READY</span>`;
                 if (user.ready == 0) {
@@ -82,6 +81,10 @@ sock.onmessage = (m) => {
             gameView.removePlayButton();
             gameView.setInstructionText("Waiting for your turn...");
             console.log("turn ended");
+            break;
+
+        case "playCardsResponse":
+            controller.handleValidateResponse(data.response);
             break;
     }
 };
