@@ -5,10 +5,9 @@ import {Response} from "./responseTypes.js"
 // Struct to represent a user and their information
 class User {
 
-    constructor(name, sock, hand, ready) {
+    constructor(name, sock, ready) {
         this.name = name;
         this.sock = sock;
-        this.hand = hand;
         this.ready = ready;
     }
 
@@ -98,7 +97,7 @@ router.get("/start_web_socket", async (ctx) => {
     }
     
     sock.username = username;
-    users.set(username, new User(username, sock, null, 0));
+    users.set(username, new User(username, sock, 0));
     console.log(`${username} connected to server.`);
     
     // Sends the client the initial data they require
@@ -137,6 +136,15 @@ router.get("/start_web_socket", async (ctx) => {
             case "ready":
                 console.log("Player " + data.player + " is ready!");
                 users.get(data.player).ready = 1;
+
+                if (!state.setFaceUp(data.player, state.dictToCards(data.faceUp))) {
+                    broadcast(JSON.stringify({
+                        event: "setText",
+                        msg: "DEBUG ERROR, CARDS INCORRECTLY INITIALIZED"
+                    }));
+
+                    exit();
+                }
                 broadcast_users();
 
                 let valid = true;
@@ -153,8 +161,9 @@ router.get("/start_web_socket", async (ctx) => {
                     }
                     broadcast_users();
                     broadcast(JSON.stringify({
-                        event: "allReady"
-                    }),);
+                        event: "setText",
+                        msg: "The game has started! Waiting for your turn..."
+                    }));
 
                     sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
                         event: "startTurn"
@@ -174,6 +183,10 @@ router.get("/start_web_socket", async (ctx) => {
                 let cards = state.dictToCards(data.cards)
                 // validates and plays the selected cards
                 let result = state.playCards(user.name, cards);
+                let pile = state.playPile.getPile();
+                if (pile.length > 0) {
+                    console.log("top: " + pile[pile.length - 1].num + " " + pile[pile.length - 1].suit);
+                }
                 
                 // sends the result of this attempt to the player
                 sendMessage(user, JSON.stringify({
@@ -182,24 +195,58 @@ router.get("/start_web_socket", async (ctx) => {
                 }));
 
                 // Updates the turn and playpile for all players if the play was successful
-                if (result == Response.VALID) {
-                    for (let card of cards) {
+                if (result != Response.INVALID && result != Response.WRONG_TURN) {
 
+                    for (let card of cards) {
                         broadcast(JSON.stringify({
                             event: "addToPlayPile",
+                            cardSuit: card.suit,
+                            cardNum: card.num,
+                        }));
+                    }
+
+                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
+                        event: "endTurn"
+                    }),);
+
+                    // Adds the number of cards played back to the player's hand if possible
+                    for (let _ = 0; _ < cards.length; _++) {
+                        let card = state.drawCard(user.name);
+                        if (card == null) {
+                            break;
+                        }
+
+                        sendMessage(user, JSON.stringify({
+                            event: "addCardHand",
                             cardSuit: card.suit,
                             cardNum: card.num
                         }),);
                     }
                     
-                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
-                        event: "endTurn"
-                    }),);
-                    
                     let turn = state.incrementTurn();
-                    sendMessage(users.get([...users.keys()][turn]), JSON.stringify({
+                    let nextPlayer = users.get(state.nextPlayer());
+                    sendMessage(nextPlayer, JSON.stringify({
                         event: "startTurn"
                     }),);
+
+                    // Adds the playpile to the players hand if they are unable to play
+                    if (!state.validPlayExists(nextPlayer.name)) {
+                        console.log("lmso:");
+                        sendMessage(nextPlayer, JSON.stringify({
+                            event: "setText",
+                            msg: "No valid plays, adding play pile to hand..."
+                        }));
+
+                        for (let card of state.playPile.getPile()) {
+                            sendMessage(nextPlayer, JSON.stringify({
+                                event: "addCardHand",
+                                cardSuit: card.suit,
+                                cardNum: card.num
+                            }));
+                        }
+                    
+                        state.addPileToHand(nextPlayer.name);
+                    }
                 }
                 break;
         }

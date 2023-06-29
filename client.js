@@ -30,9 +30,8 @@ sock.onmessage = (m) => {
             gameView.setInstructionText("Select three cards to use later.");
             break;
 
-        // When all players have been marked as ready
-        case "allReady":
-            gameView.setInstructionText("The game has started! Waiting for your turn...");
+        case "setText":
+            gameView.setInstructionText(data.msg);
             break;
 
         // Another player has played a card -> add it to the top of the play pile

@@ -12,8 +12,9 @@ export class Card {
 
 class Hand {
 
-    constructor(name){
+    constructor(name, turn){
         this.name = name;
+        this.turn = turn;
         this.handArray = [];
         this.faceDown = [];
         this.faceUp = [];
@@ -35,26 +36,31 @@ class Hand {
         return index != -1;
     }
 
+    
+    removeCard(card) {
+        
+        if (this.handArray.indexOf(card) != -1) {
+            this.handArray.splice(this.handArray.indexOf(card), 1);
+            return true;
+            
+        } else if (this.faceUp.indexOf(card) != -1) {
+            this.handArray.splice(this.faceUp.indexOf(card), 1);
+            return true;
+            
+        } else if (this.faceDown.indexOf(card) != -1) {
+            this.handArray.splice(this.faceDown.indexOf(card), 1);
+            return true;
+        }
+        
+        return false;
+    }
+    
     addToHand(card) {
         this.handArray.push(card);
     }
 
-    removeCard(card) {
-        
-        if (this.handArray.indexOf(card) != -1) {
-            this.handArray.slice(this.handArray.indexOf(card), 1);
-            return true;
-
-        } else if (this.faceUp.indexOf(card) != -1) {
-            this.handArray.slice(this.faceUp.indexOf(card), 1);
-            return true;
-
-        } else if (this.faceDown.indexOf(card) != -1) {
-            this.handArray.slice(this.faceDown.indexOf(card), 1);
-            return true;
-
-        }
-        return false;
+    addToFaceUp(card) {
+        this.faceUp.push(card);
     }
 
     addToFaceDown(card) {
@@ -67,14 +73,15 @@ export class GameState {
 
     constructor() {
         this.turn = 0;
-        this.hands = []; 
+        this.numTurns = 0;
+        this.hands = new Map(); 
         this.deck = new Deck();
         this.playPile = new PlayPile(); 
     }
 
     // Recalculates the next turn value
     incrementTurn() {
-        this.turn = (this.turn + 1) % this.hands.length;
+        this.turn = (this.turn + 1) % this.hands.size;
         return this.turn;
     }
     
@@ -86,7 +93,7 @@ export class GameState {
         }
         
         let cards = {faceDown: [], hand: []};
-        let hand = new Hand(playerName);
+        let hand = new Hand(playerName, this.numTurns++);
         // facedown cards
         for (let j = 0; j < 3; j++) {
             let chosen = this.deck.draw();
@@ -101,7 +108,7 @@ export class GameState {
             cards.hand.push(chosen);
         }
 
-        this.hands.push(hand);
+        this.hands.set(playerName, hand);
         return cards;
     }
 
@@ -116,32 +123,114 @@ export class GameState {
         return ret;
     }
 
+    setFaceUp(playerName, cards) {
+
+        let hand = this.hands.get(playerName);
+        if (hand == null) {
+            return false;
+        }
+
+        console.log("faceup: ");
+        for (let card of cards) {
+            if (hand.removeCard(card)) {
+                hand.addToFaceUp(card);
+                console.log(card.num + " " + card.suit);
+            } else {
+                console.log("Ja fucekd up");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     // Checks if a set of cards is currently playable and plays them if valid. Gives appropriate responses to be interpretted by the client
     playCards(playerName, cards) {
 
-        if (this.hands[this.turn].name != playerName) {
+        let playerHand = this.hands.get(playerName);
+        if (playerHand.turn != this.turn) {
             return Response.WRONG_TURN;
         }
 
         // TODO checks for facedown cards to ensure only one is played at the same time? not too sure abt the rules of the game tbh
         for (let card of cards) {
-            if (!this.hands[this.turn].isPlayable(card)) {
+            if (!playerHand.isPlayable(card)) {
+                console.log("non playable");
                 return Response.INVALID;
             }
         }
 
         for (let card of cards) {
             if (!this.playPile.validatePlay(card)) {
+                console.log("invalid");
                 return Response.INVALID;
             }
         }
 
+        let isTen = false;
         for (let card of cards) {
-            this.hands[this.turn].removeCard(card);
+            playerHand.removeCard(card);
+            isTen = card.num == 9 || isTen ? true : false; 
         }
 
+        if (isTen) {
+            this.playPile.clear();
+            return Response.CLEAR_PILE;
+        }
         this.playPile.addToPile(cards);
         return Response.VALID;
+    }
+
+    // Draws a card and adds it to the player's hand
+    drawCard(playerName) {
+        
+        let card = this.deck.draw();
+
+        if (card == null) {
+            return null;
+        }
+
+        this.hands.get(playerName).addToHand(card);
+        return card
+    }
+
+    // TODO only works for hand cards, not faceup/down
+    validPlayExists(playerName) {
+
+        console.log(playerName + this.hands.get(playerName).handArray.length);
+
+        let valid = false;
+        for (let card of this.hands.get(playerName).handArray) {
+            valid = this.playPile.validatePlay(card);
+            console.log(card.suit + " " + card.num + " " + valid);
+            if (valid) {
+                break;
+            }
+        }
+
+        return valid;
+    }
+
+    // Adds the entire playpile to the players hand
+    addPileToHand(playerName) {
+
+        for (let card of this.playPile.getPile()) {
+            this.hands.get(playerName).handArray.push(card);
+        }
+
+        this.playPile.clear();
+    }
+
+    // Gets the next player
+    nextPlayer() {
+        this.incrementTurn();
+        for (let hand of this.hands.values()) {
+            if (hand.turn == this.turn) {
+                return hand.name;
+            }
+        }
+
+        return null;
     }
 }
 
@@ -166,17 +255,24 @@ class PlayPile {
         return this.pile;
     }
 
+    // Empties the play pile
+    clear() {
+        this.pile = [];
+    }
+
     // Checks whether playing a card is valid based on the current state of the pile
     validatePlay(card) {
 
+        
         if (this.pile == null || this.pile.length == 0){
             return true;
         }
         if (card.num == 9 || card.num == 1 || card.num == 2){
             return true;
         }
-
-        let compCard = this.pile.slice(-1);
+        
+        let compCard = this.pile[this.pile.length - 1];
+        console.log("comping: " + compCard.num + " " + compCard.suit + " " + card.num + " " + card.suit);
 
         if (compCard.num == 2){
 
