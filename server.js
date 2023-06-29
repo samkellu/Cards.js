@@ -193,19 +193,28 @@ router.get("/start_web_socket", async (ctx) => {
                 // Updates the turn and playpile for all players if the play was successful
                 if (result != Response.INVALID && result != Response.WRONG_TURN) {
 
-                    for (let card of cards) {
+                    // Clears the pile if a 10 was played, otherwise adds cards to the pile
+                    if (result == Response.CLEAR_PILE) {
                         broadcast(JSON.stringify({
-                            event: "addToPlayPile",
-                            cardSuit: card.suit,
-                            cardNum: card.num,
+                            event: "emptyPile",
                         }));
-                    }
 
+                    } else {   
+                        for (let card of cards) {
+                            broadcast(JSON.stringify({
+                                event: "addToPlayPile",
+                                cardSuit: card.suit,
+                                cardNum: card.num,
+                            }));
+                        }
+                    }
+                    
                     sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
                         event: "endTurn"
                     }),);
 
                     // Adds the number of cards played back to the player's hand if possible
+                    // TODO should only add up to 3 if the player has less than 3?
                     for (let _ = 0; _ < cards.length; _++) {
                         let card = state.drawCard(user.name);
                         if (card == null) {
