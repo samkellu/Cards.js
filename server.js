@@ -183,10 +183,6 @@ router.get("/start_web_socket", async (ctx) => {
                 let cards = state.dictToCards(data.cards)
                 // validates and plays the selected cards
                 let result = state.playCards(user.name, cards);
-                let pile = state.playPile.getPile();
-                if (pile.length > 0) {
-                    console.log("top: " + pile[pile.length - 1].num + " " + pile[pile.length - 1].suit);
-                }
                 
                 // sends the result of this attempt to the player
                 sendMessage(user, JSON.stringify({
@@ -223,7 +219,6 @@ router.get("/start_web_socket", async (ctx) => {
                         }),);
                     }
                     
-                    let turn = state.incrementTurn();
                     let nextPlayer = users.get(state.nextPlayer());
                     sendMessage(nextPlayer, JSON.stringify({
                         event: "startTurn"
@@ -231,10 +226,13 @@ router.get("/start_web_socket", async (ctx) => {
 
                     // Adds the playpile to the players hand if they are unable to play
                     if (!state.validPlayExists(nextPlayer.name)) {
-                        console.log("lmso:");
                         sendMessage(nextPlayer, JSON.stringify({
                             event: "setText",
                             msg: "No valid plays, adding play pile to hand..."
+                        }));
+
+                        broadcast(JSON.stringify({
+                            event: "emptyPile",
                         }));
 
                         for (let card of state.playPile.getPile()) {

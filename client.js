@@ -44,6 +44,10 @@ sock.onmessage = (m) => {
             addCard(data.cardSuit, data.cardNum);
             break;
 
+        case "emptyPile":
+            controller.clearPlayPile();
+            break;
+
         case "addCardFaceDown":
             controller.addToFaceDown(new CardView(data.cardSuit, data.cardNum, two, CardTypes.FACEDOWN));
             break;

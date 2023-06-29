@@ -130,13 +130,10 @@ export class GameState {
             return false;
         }
 
-        console.log("faceup: ");
         for (let card of cards) {
             if (hand.removeCard(card)) {
                 hand.addToFaceUp(card);
-                console.log(card.num + " " + card.suit);
             } else {
-                console.log("Ja fucekd up");
                 return false;
             }
         }
@@ -155,14 +152,12 @@ export class GameState {
         // TODO checks for facedown cards to ensure only one is played at the same time? not too sure abt the rules of the game tbh
         for (let card of cards) {
             if (!playerHand.isPlayable(card)) {
-                console.log("non playable");
                 return Response.INVALID;
             }
         }
 
         for (let card of cards) {
             if (!this.playPile.validatePlay(card)) {
-                console.log("invalid");
                 return Response.INVALID;
             }
         }
@@ -197,12 +192,9 @@ export class GameState {
     // TODO only works for hand cards, not faceup/down
     validPlayExists(playerName) {
 
-        console.log(playerName + this.hands.get(playerName).handArray.length);
-
         let valid = false;
         for (let card of this.hands.get(playerName).handArray) {
             valid = this.playPile.validatePlay(card);
-            console.log(card.suit + " " + card.num + " " + valid);
             if (valid) {
                 break;
             }
@@ -263,7 +255,6 @@ class PlayPile {
     // Checks whether playing a card is valid based on the current state of the pile
     validatePlay(card) {
 
-        
         if (this.pile == null || this.pile.length == 0){
             return true;
         }
@@ -272,7 +263,6 @@ class PlayPile {
         }
         
         let compCard = this.pile[this.pile.length - 1];
-        console.log("comping: " + compCard.num + " " + compCard.suit + " " + card.num + " " + card.suit);
 
         if (compCard.num == 2){
 
