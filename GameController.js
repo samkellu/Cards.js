@@ -156,6 +156,7 @@ export class GameController {
             this.currentSelection[i].sprite.remove();
         }
         this.currentSelection = [];
+        this.draw();
     }
 
     // Clears the play pile
@@ -165,6 +166,7 @@ export class GameController {
             this.playPile[i].sprite.remove();
         }
         this.playPile = [];
+        this.draw();
     }
 
     // Handles the different behaviours of cards when clicked 
