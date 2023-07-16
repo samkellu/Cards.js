@@ -1,7 +1,7 @@
 import {Response} from "./responseTypes.js" 
 
 export class Card {
-    value;
+    num;
     suit;
 
     constructor(suit, num){
@@ -86,7 +86,7 @@ export class GameState {
     }
     
     // Initialises a specific player's hand with 3 facedown and 5 faceup cards
-    initHand(playerName) {
+    initHand(playerName, numHandCards) {
 
         if (playerName == null) {
             return null;
@@ -102,7 +102,7 @@ export class GameState {
         }
         
         // faceup cards
-        for (let j = 0; j < 5; j++) {
+        for (let j = 0; j < numHandCards; j++) {
             let chosen = this.deck.draw();
             hand.addToHand(chosen);
             cards.hand.push(chosen);
@@ -112,12 +112,14 @@ export class GameState {
         return cards;
     }
 
-    // Converts a dictionary of the form {suit, num} into a list of cards
-    dictToCards(cardsDict) {
+    // Converts a JSONArray of the form [{suit, num}, ...] into a list of cards
+    JSONToCards(cards) {
         
         let ret = [];
-        for (let key of Object.keys(cardsDict)) {
-            ret.push(this.deck.allCards[key * 13 + cardsDict[key]]);
+        let curs = 0;
+        for (let card of cards) {
+            ret.push(this.deck.allCards[card.suit * 13 + card.num]);
+            curs++;
         }
 
         return ret;
@@ -174,6 +176,21 @@ export class GameState {
         }
         this.playPile.addToPile(cards);
         return Response.VALID;
+    }
+
+    // If the player's hand has less than the set minimum number of cards, then fills it if possible
+    fillHand(playerName, minHandSize) {
+
+        let toAdd = []
+        for (let i = this.hands.get(playerName).handArray.length; i < minHandSize; i++) {
+            let card = this.drawCard(playerName);
+
+            if (card) {
+                toAdd.push(card);
+            }
+        }
+
+        return toAdd;
     }
 
     // Draws a card and adds it to the player's hand
@@ -315,21 +332,13 @@ export class Deck {
                 this.allCards.push(card);
             }
         }
-        this.shuffleDeck();
     }
 
-    // Shuffles the entire deck
-    shuffleDeck(array) {
-        for (var i = this.drawDeck.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var temp = this.drawDeck[i];
-            this.drawDeck[i] = this.drawDeck[j];
-            this.drawDeck[j] = temp;
-        }
-    }
-
-    // Draws one card from the deck
+    // Draws one card from the deck at random
     draw() {
-        return this.drawDeck.pop();
+        var i = Math.floor(Math.random() * (this.drawDeck.length - 1));
+        var card = this.drawDeck[i];
+        this.drawDeck.splice(i, 1);
+        return card;
     }
 }
