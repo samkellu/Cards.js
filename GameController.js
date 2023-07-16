@@ -21,10 +21,17 @@ export class GameController {
     // Sets the ready status of the player, informs the server of this change
     setReady() {
         this.ready = true;
-            
+
+        // Creates a dictionary representation of the faceup cards to be sent to the server
+        let cards = {};
+        for (let card of this.faceUp) {
+            cards[card.suit] = card.cardNum;
+        }
+
         this.sock.send(JSON.stringify({
             event: "ready",
-            player: this.username
+            player: this.username,
+            faceUp: cards
         }),);
     }
 
@@ -69,7 +76,7 @@ export class GameController {
         switch (card.cardType) {
             case CardTypes.HAND:
                 if (this.currentSelection.length != 0 && card.cardNum != this.currentSelection[0].cardNum) {
-                    this.emptySelection();
+                    this.emptySelectionToHand();
                 }
                 this.hand.splice(this.hand.indexOf(card), 1);
                 break;
@@ -87,7 +94,7 @@ export class GameController {
                     }
                 }
                     
-                this.emptySelection();
+                this.emptySelectionToHand();
                 this.faceUp.splice(this.faceUp.indexOf(card), 1);
                 break;
         }
@@ -121,7 +128,7 @@ export class GameController {
     }
 
     // Removes all cards from the current selection and adds them back to the player's hand
-    emptySelection() {
+    emptySelectionToHand() {
 
         for (let i = 0; i < this.currentSelection.length; i++) {
             let card = this.currentSelection[i];
@@ -137,6 +144,29 @@ export class GameController {
                 card.isHoverable = false;
             }
         }
+
+        this.currentSelection = [];
+    }
+
+    // Plays the players selection to the playpile
+    playSelection() {
+        // Removes sprites from the current selection, doesnt add them back to the player's hand
+        for (let i = 0; i < this.currentSelection.length; i++) {
+            this.addToPlayPile(this.currentSelection[i]);
+            this.currentSelection[i].sprite.remove();
+        }
+        this.currentSelection = [];
+        this.draw();
+    }
+
+    // Clears the play pile
+    clearPlayPile() {
+        // Removes sprites from the current selection, doesnt add them back to the player's hand
+        for (let i = 0; i < this.playPile.length; i++) {
+            this.playPile[i].sprite.remove();
+        }
+        this.playPile = [];
+        this.draw();
     }
 
     // Handles the different behaviours of cards when clicked 
@@ -204,27 +234,34 @@ export class GameController {
     // Handles the various card validation responsed from the server
     handleValidateResponse(response) {
 
+        switch (response) {
+            case Response.INVALID:
+                
+                // Adds all cards in the selection back to your hand
+                this.emptySelectionToHand();
+                // TODO - Add a case for when you have no valid plays possible
+                this.gameView.setInstructionText("Invalid play... Try again");
+                break;
 
-        if (response == Response.INVALID) {
+            case Response.VALID:
 
-            // Adds all cards in the selection back to your hand
-            this.emptySelection();
-            // TODO - Add a case for when you have no valid plays possible
-            this.gameView.setInstructionText("Invalid play... Try again");
+                // Removes sprites from the current selection, doesnt add them back to the player's hand
+                this.playSelection();
+                break;
 
-        } else if (response == Response.VALID) {
+            // Shouldnt be reachable, as the button only exists when it is the player's turn, added due to desync errors
+            case Response.WRONG_TURN:
 
-            // Removes sprites from the current selection, doesnt add them back to the player's hand
-            for (let i = 0; i < this.currentSelection.length; i++) {
-                this.currentSelection[i].sprite.remove();
-            }
-            
-        // Shouldnt be reachable, as the button only exists when it is the player's turn, added due to desync errors
-        } else if (response == Response.WRONG_TURN) {
+                // Adds all cards in the selection back to your hand
+                this.emptySelectionToHand();
+                this.gameView.setInstructionText("Not your turn...");
+                break;
 
-            // Adds all cards in the selection back to your hand
-            this.emptySelection();
-            this.gameView.setInstructionText("Not your turn...");
+            case Response.CLEAR_PILE:
+
+                this.playSelection();
+                this.clearPlayPile();
+                break;
         }
 
         if (this.hand.length == 0) {
@@ -236,7 +273,6 @@ export class GameController {
                 card.isHoverable = false;
             }
         }
-        this.currentSelection = [];
         this.draw();
     }
 
