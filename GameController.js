@@ -22,16 +22,20 @@ export class GameController {
     setReady() {
         this.ready = true;
 
-        // Creates a dictionary representation of the faceup cards to be sent to the server
-        let cards = {};
+        // Creates a JSON representation of the faceup cards to be sent to the server
+        let cardData = [];
         for (let card of this.faceUp) {
-            cards[card.suit] = card.cardNum;
+            let jsonRep = {
+                num: card.num,
+                suit: card.suit
+            };
+            cardData.push(jsonRep);
         }
 
         this.sock.send(JSON.stringify({
             event: "ready",
             player: this.username,
-            faceUp: cards
+            faceUp: cardData
         }),);
     }
 
@@ -47,7 +51,7 @@ export class GameController {
         card.isHoverable = true;
         card.cardType = CardTypes.HAND;
         for (let i = 0; i < this.hand.length; i++) {
-            if (this.hand[i].cardNum >= card.cardNum) {
+            if (this.hand[i].num >= card.num) {
                 this.hand.splice(i, 0, card);
                 this.draw();
                 return;
@@ -75,10 +79,10 @@ export class GameController {
         // Checks validity of taking the different types of cards, based on gamestate
         switch (card.cardType) {
             case CardTypes.HAND:
-                if (this.currentSelection.length != 0 && card.cardNum != this.currentSelection[0].cardNum) {
+                this.hand.splice(this.hand.indexOf(card), 1);
+                if (this.currentSelection.length != 0 && card.num != this.currentSelection[0].num) {
                     this.emptySelectionToHand();
                 }
-                this.hand.splice(this.hand.indexOf(card), 1);
                 break;
                 
             case CardTypes.FACEUP:
@@ -130,9 +134,8 @@ export class GameController {
     // Removes all cards from the current selection and adds them back to the player's hand
     emptySelectionToHand() {
 
-        for (let i = 0; i < this.currentSelection.length; i++) {
-            let card = this.currentSelection[i];
-            this.removeFromSelection(card);
+        while (this.currentSelection.length > 0) {
+            this.removeFromSelection(this.currentSelection[0]);
         }
 
         if (this.hand.length == 0) {
@@ -219,15 +222,19 @@ export class GameController {
             this.handleValidateResponse(Response.INVALID);
         }
 
-        // Creates a dictionary representation of the selection to be sent to the server
-        let cards = {};
+        // Creates a JSON representation of the selection to be sent to the server
+        let cardData = [];
         for (let card of this.currentSelection) {
-            cards[card.suit] = card.cardNum;
+            let jsonRep = {
+                num: card.num,
+                suit: card.suit
+            };
+            cardData.push(jsonRep);
         }
 
         this.sock.send(JSON.stringify({
             event: "playCards",
-            cards: cards,
+            cards: cardData
         }),);
     }
 

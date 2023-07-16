@@ -10,15 +10,15 @@ export const CardTypes = {
 export class CardView {
     width;
     height;
-    cardNum;
+    num;
     suit;
     rect;
     sprite;
     cardType;
 
-    constructor(suitNum, cardNum, canvas, cardType){
+    constructor(suitNum, num, canvas, cardType){
 
-        this.cardNum = cardNum;
+        this.num = num;
         this.suit = suitNum;
         this.cardType = cardType;
 
@@ -28,7 +28,7 @@ export class CardView {
         if (cardType == CardTypes.FACEDOWN) {
             image.src = "./cardSprites/blank1.png";
         } else {
-            image.src = "./cardSprites/" + ["heart", "diamond", "club", "spade"][suitNum] + cardNum + ".png";
+            image.src = "./cardSprites/" + ["heart", "diamond", "club", "spade"][suitNum] + num + ".png";
             this.isHoverable = true;
         }
         this.width = image.width;

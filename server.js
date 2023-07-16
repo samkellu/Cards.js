@@ -2,6 +2,8 @@ import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 import { GameState, Card } from "./backendClasses.js";
 import {Response} from "./responseTypes.js" 
 
+const MIN_HAND_SIZE = 3;
+
 // Struct to represent a user and their information
 class User {
 
@@ -65,7 +67,7 @@ function initGamestate() {
 
     for (let user of users.values()) {
 
-        let toAdd = state.initHand(user.name);
+        let toAdd = state.initHand(user.name, MIN_HAND_SIZE + 3);
         for (let card of toAdd.faceDown) {
             sendMessage(user, JSON.stringify({
                 event: "addCardFaceDown",
@@ -81,6 +83,51 @@ function initGamestate() {
                 cardNum: card.num
             }),);
         }
+    }
+}
+
+function nextTurn(currentPlayer) {
+
+    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
+        event: "endTurn"
+    }),);
+
+    // Fills the players hand up to the minimum amount if possible
+    let toAdd = state.fillHand(currentPlayer.name, MIN_HAND_SIZE);
+    for (let card of toAdd) {
+
+        sendMessage(currentPlayer, JSON.stringify({
+            event: "addCardHand",
+            cardSuit: card.suit,
+            cardNum: card.num
+        }),);
+    }
+    
+    let nextPlayer = users.get(state.nextPlayer());
+    sendMessage(nextPlayer, JSON.stringify({
+        event: "startTurn"
+    }),);
+
+    // Adds the playpile to the players hand if they are unable to play
+    if (!state.validPlayExists(nextPlayer.name)) {
+        sendMessage(nextPlayer, JSON.stringify({
+            event: "setText",
+            msg: "No valid plays, adding play pile to hand..."
+        }));
+
+        broadcast(JSON.stringify({
+            event: "emptyPile",
+        }));
+
+        for (let card of state.playPile.getPile()) {
+            sendMessage(nextPlayer, JSON.stringify({
+                event: "addCardHand",
+                cardSuit: card.suit,
+                cardNum: card.num
+            }));
+        }
+    
+        state.addPileToHand(nextPlayer.name);
     }
 }
 
@@ -136,8 +183,9 @@ router.get("/start_web_socket", async (ctx) => {
             case "ready":
                 console.log("Player " + data.player + " is ready!");
                 users.get(data.player).ready = 1;
+                console.log(data.faceUp);
 
-                if (!state.setFaceUp(data.player, state.dictToCards(data.faceUp))) {
+                if (!state.setFaceUp(data.player, state.JSONToCards(data.faceUp))) {
                     broadcast(JSON.stringify({
                         event: "setText",
                         msg: "DEBUG ERROR, CARDS INCORRECTLY INITIALIZED"
@@ -180,7 +228,9 @@ router.get("/start_web_socket", async (ctx) => {
                     return;
                 }
 
-                let cards = state.dictToCards(data.cards)
+                console.log(data.cards);
+                let cards = state.JSONToCards(data.cards)
+                console.log(cards);
                 // validates and plays the selected cards
                 let result = state.playCards(user.name, cards);
                 
@@ -208,52 +258,8 @@ router.get("/start_web_socket", async (ctx) => {
                             }));
                         }
                     }
-                    
-                    sendMessage(users.get([...users.keys()][state.turn]), JSON.stringify({
-                        event: "endTurn"
-                    }),);
 
-                    // Adds the number of cards played back to the player's hand if possible
-                    // TODO should only add up to 3 if the player has less than 3?
-                    for (let _ = 0; _ < cards.length; _++) {
-                        let card = state.drawCard(user.name);
-                        if (card == null) {
-                            break;
-                        }
-
-                        sendMessage(user, JSON.stringify({
-                            event: "addCardHand",
-                            cardSuit: card.suit,
-                            cardNum: card.num
-                        }),);
-                    }
-                    
-                    let nextPlayer = users.get(state.nextPlayer());
-                    sendMessage(nextPlayer, JSON.stringify({
-                        event: "startTurn"
-                    }),);
-
-                    // Adds the playpile to the players hand if they are unable to play
-                    if (!state.validPlayExists(nextPlayer.name)) {
-                        sendMessage(nextPlayer, JSON.stringify({
-                            event: "setText",
-                            msg: "No valid plays, adding play pile to hand..."
-                        }));
-
-                        broadcast(JSON.stringify({
-                            event: "emptyPile",
-                        }));
-
-                        for (let card of state.playPile.getPile()) {
-                            sendMessage(nextPlayer, JSON.stringify({
-                                event: "addCardHand",
-                                cardSuit: card.suit,
-                                cardNum: card.num
-                            }));
-                        }
-                    
-                        state.addPileToHand(nextPlayer.name);
-                    }
+                    nextTurn(user);
                 }
                 break;
         }
